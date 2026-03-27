@@ -113,6 +113,31 @@ export default function App() {
 }
 ```
 
+## React Imports
+
+Zap `0.1` serves React from a CDN and expects React APIs such as `useState` to be available as globals at runtime.
+
+That means:
+
+- do not import from `"react"` or `"react-dom"` yet
+- write `useState`, `useEffect`, and similar APIs directly
+- imported local components should follow the same rule
+
+This works:
+
+```tsx
+export default function App() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+```
+
+This does not work yet:
+
+```tsx
+import { useState } from "react";
+```
+
 ## Global Styles
 
 Create `public/styles/global.css` and Zap will inject it into every React page automatically.
