@@ -1,0 +1,23 @@
+.DS_Store
+Thumbs.db
+
+# Go build outputs and local binaries
+/zap
+/*.exe
+/*.exe~
+/*.dll
+/*.so
+/*.dylib
+/*.test
+/*.out
+
+# Go workspace caches
+.coverprofile
+coverage.out
+
+# Editor swap/temp files
+*.swp
+*.swo
+*.swn
+*.bak
+*~

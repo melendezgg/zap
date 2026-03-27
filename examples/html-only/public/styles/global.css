@@ -1,0 +1,21 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+main {
+  max-width: 720px;
+  margin: 48px auto;
+  padding: 0 20px;
+}
+
+nav {
+  display: flex;
+  gap: 12px;
+}
+
+.script-note {
+  margin-top: 32px;
+}
