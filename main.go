@@ -344,7 +344,7 @@ func generateHTML(jsCode string, css string, title string) string {
         }
     </script>
 </body>
-</html>`, title, styleTag, reactCDN, reactDOMCDN, jsCode)
+</html>`, html.EscapeString(title), styleTag, reactCDN, reactDOMCDN, jsCode)
 }
 
 func renderDevErrorHTML(routePath string, err error) string {
