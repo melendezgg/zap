@@ -1,6 +1,6 @@
-module serve-jsx-test
+module github.com/melendezgg/zap
 
-go 1.25.0
+go 1.22
 
 require (
 	github.com/evanw/esbuild v0.27.3 // indirect
