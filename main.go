@@ -14,6 +14,8 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 )
 
+var version = "dev"
+
 // Configuración
 var config = &Config{
 	Port: ":8080",
@@ -679,13 +681,15 @@ func parseArgs() {
 
 // === MOSTRAR AYUDA ===
 func printUsage() {
-	fmt.Println(`
+	fmt.Printf(`
 ZAP - Runtime de desarrollo React/TypeScript
+Versión: %s
 
 USO:
   zap                        Iniciar servidor de desarrollo
   zap --port 3000            Puerto personalizado
   zap --help                 Esta ayuda
+  zap --version              Mostrar versión
 
 NOTA:
   0.1 está enfocado en desarrollo.
@@ -711,15 +715,25 @@ ESTRUCTURA:
   /components/               -> Componentes UI (opcional)
   /public/styles/global.css  -> Estilos globales automáticos
   /public/                   -> Assets estáticos (opcional)
-`)
+`, version)
+}
+
+func printVersion() {
+	fmt.Println(version)
 }
 
 // === MAIN ===
 func main() {
 	parseArgs()
-	if len(os.Args) >= 2 && (os.Args[1] == "--help" || os.Args[1] == "-h") {
-		printUsage()
-		return
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "--help", "-h":
+			printUsage()
+			return
+		case "--version", "-v":
+			printVersion()
+			return
+		}
 	}
 
 	magicInit()
@@ -727,7 +741,7 @@ func main() {
 	fmt.Println("Escaneando...")
 	routeStore.SetAll(scanAllRoutes())
 
-	fmt.Printf("\nZAP (DESARROLLO) en http://localhost%s\n", config.Port)
+	fmt.Printf("\nZAP %s (DESARROLLO) en http://localhost%s\n", version, config.Port)
 	fmt.Printf("Rutas: %d\n\n", routeStore.Len())
 	fmt.Println("Hot-reload activo")
 	fmt.Println("React 18 (CDN)")
