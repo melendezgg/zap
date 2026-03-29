@@ -59,9 +59,7 @@ mi-app/
 │   ├── index.tsx          -> Página principal (/)
 │   ├── about.tsx          -> Acerca de (/about)
 │   ├── contact.html       -> HTML estático (/contact)
-│   └── _Card.tsx          -> Módulo privado (no es ruta)
-├── components/
-│   └── Button.jsx         -> Componente reutilizable
+│   └── _Card.tsx          -> Módulo privado reutilizable
 └── public/
     └── styles/
         └── global.css     -> Estilos globales
@@ -100,7 +98,7 @@ export default function App() {
 Los archivos dentro de `routes/` que empiezan con `_` quedan fuera del routing público, pero se pueden importar normalmente.
 
 ```tsx
-import Button from "../components/Button";
+import Button from "./_Button";
 import Card from "./_Card";
 
 export default function App() {
@@ -159,7 +157,7 @@ body {
 
 ## Cómo Funciona
 
-Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarrollo. Las rutas se descubren desde `routes/`, los archivos privados con prefijo `_` quedan fuera del router público y `public/styles/global.css` se inyecta automáticamente cuando existe.
+Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarrollo. Las rutas se descubren desde `routes/`, los archivos privados con prefijo `_` quedan fuera del router público pero se pueden reutilizar localmente, y `public/styles/global.css` se inyecta automáticamente cuando existe.
 
 Zap observa cambios cada 2 segundos, limpia su cache de bundles en memoria y vuelve a escanear las rutas.
 

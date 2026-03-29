@@ -1,4 +1,4 @@
-import Button from "../components/Button";
+import Button from "./_Button";
 
 export const title = "Home - Multi Page";
 

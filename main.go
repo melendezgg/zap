@@ -27,10 +27,8 @@ type Config struct {
 
 // Directorios
 const (
-	routesDir     = "routes"
-	apiDir        = "api"
-	componentsDir = "components"
-	publicDir     = "public"
+	routesDir = "routes"
+	publicDir = "public"
 )
 
 // Archivos a ignorar
@@ -559,7 +557,7 @@ func logRequest(method, path string, status int, start time.Time) {
 func collectWatchedFiles() map[string]time.Time {
 	files := make(map[string]time.Time)
 
-	for _, d := range []string{routesDir, apiDir, componentsDir, publicDir} {
+	for _, d := range []string{routesDir, publicDir} {
 		filepath.Walk(d, func(path string, info os.FileInfo, err error) error {
 			if err != nil || info == nil || info.IsDir() {
 				return nil
@@ -712,7 +710,6 @@ CARACTERÍSTICAS:
 ESTRUCTURA:
   /routes/*.tsx,jsx,html,js  -> Rutas públicas
   /routes/_*                 -> Módulos privados, no rutas públicas
-  /components/               -> Componentes UI (opcional)
   /public/styles/global.css  -> Estilos globales automáticos
   /public/                   -> Assets estáticos (opcional)
 `, version)
