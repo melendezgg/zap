@@ -5,10 +5,6 @@ import (
 	"html"
 )
 
-// / CDNs - React
-const reactCDN = `https://unpkg.com/react@18/umd/react.development.js`
-const reactDOMCDN = `https://unpkg.com/react-dom@18/umd/react-dom.development.js`
-
 // === GENERAR HTML ===
 func generateHTML(jsCode string, css string, title string) string {
 	styleTag := ""
@@ -23,23 +19,21 @@ func generateHTML(jsCode string, css string, title string) string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>%s</title>
     %s
-    <script crossorigin src="%s"></script>
-    <script crossorigin src="%s"></script>
 </head>
 <body>
     <div id="root"></div>
-    <script>
-        const { useState, useEffect, useContext, createContext, useRef, useMemo, useCallback } = React;
+    <script type="module">
+        %s
 
         %s
 
         if (typeof window.App !== 'undefined') {
-            const root = ReactDOM.createRoot(document.getElementById('root'));
+            const root = createRoot(document.getElementById('root'));
             root.render(React.createElement(window.App));
         }
     </script>
 </body>
-</html>`, html.EscapeString(title), styleTag, reactCDN, reactDOMCDN, jsCode))
+</html>`, html.EscapeString(title), styleTag, reactRuntimeImportScript(), jsCode))
 }
 
 func renderDevErrorHTML(routePath string, err error) string {

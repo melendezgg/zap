@@ -12,6 +12,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	setDevResponseHeaders(w)
 
+	if handled, status := handleVendorAsset(w, r); handled {
+		logRequest(r.Method, path, status, start)
+		return
+	}
+
 	if path == "/__zap/events" {
 		if r.Method != http.MethodGet {
 			methodNotAllowed(w, "GET")

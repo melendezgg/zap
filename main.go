@@ -32,7 +32,7 @@ func main() {
 	fmt.Printf("\nZAP %s (DESARROLLO) en %s\n", version, displayURL())
 	fmt.Printf("Rutas: %d\n\n", routeStore.Len())
 	fmt.Println("Hot-reload activo")
-	fmt.Println("React 18 (CDN)")
+	fmt.Printf("React %s (embebido)\n", reactVersion)
 	fmt.Println()
 	fmt.Println("Servidor listo. Ctrl+C para detener.")
 	fmt.Println()
