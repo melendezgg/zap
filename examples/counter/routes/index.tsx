@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export const title = "Counter - Zap";
 
 export default function App() {

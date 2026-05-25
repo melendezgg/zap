@@ -1,18 +1,19 @@
 # Zap
 
-**React/TypeScript development runtime without the setup.**
+**Frontend development runtime without the setup.**
 
-A small, portable development runtime for modern web development.
+A small, portable development runtime for modern frontend work.
 
-Download it, run it, edit files, and start building immediately. No Node.js, no npm, and no bundler setup. Zap serves HTML, JSX, and TSX from a single executable, so a new developer can try web development almost the same way they would with a simple static server, but with React-style components built in.
+Download it, run it, edit files, and start building immediately. No Node.js, no npm, and no bundler setup. Zap serves HTML, JavaScript, JSX, and TSX from a single executable, so a new developer can try frontend development almost the same way they would with a simple static server, but with React-style components built in.
 
-It is designed for prototypes, demos, internal tools, small apps, and learning. If you want to try modern frontend development without first learning a heavy toolchain, Zap is the shortest path from an empty folder to a running app.
+It is designed for frontend prototypes, demos, internal tools, small apps, and learning. If you want to sketch an interface without first learning a heavy toolchain, Zap is the shortest path from an empty folder to a running app.
 
 ## Status
 
 Zap is currently focused on the `0.1` development experience.
 
 - Dev-only runtime for now
+- Frontend-only runtime; no backend JavaScript execution
 - Static file-based routing
 - Global styles via `public/styles/global.css`
 - Files starting with `_` are private modules, not public routes
@@ -43,6 +44,7 @@ go install github.com/melendezgg/zap@latest
 
 - **Zero configuration** - Single binary, no Node.js toolchain
 - **React 18** - Loaded via CDN
+- **React imports** - Supports `"react"`, `"react-dom"`, and `"react-dom/client"`
 - **Hot reload** - Detects file changes automatically
 - **TypeScript/JSX** - Native support via esbuild
 - **Multi-format routes** - `.tsx`, `.jsx`, `.html`, `.js`
@@ -76,6 +78,8 @@ zap --help                 # Show help
 ## Example: `routes/index.tsx`
 
 ```tsx
+import { useState } from "react";
+
 export const title = "Home - My App";
 
 export default function App() {
@@ -92,6 +96,12 @@ export default function App() {
   );
 }
 ```
+
+## Frontend Scope
+
+Zap is intentionally a frontend runtime. It does not execute backend JavaScript, install npm packages, provide API routes, or connect to databases. If your frontend needs data, run a separate API/backend server and call it from Zap with `fetch`.
+
+Zap only handles a small set of controlled package imports today: `"react"`, `"react-dom"`, and `"react-dom/client"`. Those imports are mapped to the React CDN scripts that Zap injects at runtime, so code can follow normal React patterns without requiring `node_modules`.
 
 ## Private Files
 
@@ -113,27 +123,26 @@ export default function App() {
 
 ## React Imports
 
-Zap `0.1` serves React from a CDN and expects React APIs such as `useState` to be available as globals at runtime.
+Zap `0.1` serves React from a CDN and supports normal imports from `"react"`, `"react-dom"`, and `"react-dom/client"`.
 
-That means:
-
-- do not import from `"react"` or `"react-dom"` yet
-- write `useState`, `useEffect`, and similar APIs directly
-- imported local components should follow the same rule
-
-This works:
+You can write components with standard React imports:
 
 ```tsx
+import { useState } from "react";
+
 export default function App() {
   const [count, setCount] = useState(0);
   return <button onClick={() => setCount(count + 1)}>{count}</button>;
 }
 ```
 
-This does not work yet:
+For small examples, React hooks are also available as globals:
 
 ```tsx
-import { useState } from "react";
+export default function App() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
 ```
 
 ## Global Styles
@@ -157,7 +166,7 @@ body {
 
 ## How It Works
 
-Zap uses [esbuild](https://esbuild.github.io/) to bundle JSX/TSX for development. Routes are discovered from `routes/`, private files prefixed with `_` are excluded from the public router but can still be reused locally, and `public/styles/global.css` is injected automatically when present.
+Zap uses [esbuild](https://esbuild.github.io/) to bundle JSX/TSX for development. Routes are discovered from `routes/`, private files prefixed with `_` are excluded from the public router but can still be reused locally, React imports are mapped to CDN globals, and `public/styles/global.css` is injected automatically when present.
 
 Zap watches the project every 2 seconds, clears its in-memory bundle cache on changes, and rebuilds the route map.
 

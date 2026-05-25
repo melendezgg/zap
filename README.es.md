@@ -1,18 +1,19 @@
 # Zap
 
-**Runtime de desarrollo React/TypeScript sin configuración.**
+**Runtime de desarrollo frontend sin configuración.**
 
-Un runtime de desarrollo pequeño y portable para desarrollo web moderno.
+Un runtime de desarrollo pequeño y portable para frontend moderno.
 
-Descárgalo, ejecútalo, edita archivos y empieza a construir de inmediato. Sin Node.js, sin npm y sin configurar bundlers. Zap sirve HTML, JSX y TSX desde un solo ejecutable, así que un desarrollador nuevo puede probar desarrollo web casi igual que con un servidor estático simple, pero con componentes tipo React integrados.
+Descárgalo, ejecútalo, edita archivos y empieza a construir de inmediato. Sin Node.js, sin npm y sin configurar bundlers. Zap sirve HTML, JavaScript, JSX y TSX desde un solo ejecutable, así que un desarrollador nuevo puede probar desarrollo frontend casi igual que con un servidor estático simple, pero con componentes tipo React integrados.
 
-Está pensado para prototipos, demos, herramientas internas, apps pequeñas y aprendizaje. Si quieres probar frontend moderno sin tener que aprender antes un toolchain pesado, Zap es el camino más corto entre una carpeta vacía y una app corriendo.
+Está pensado para prototipos frontend, demos, herramientas internas, apps pequeñas y aprendizaje. Si quieres bocetar una interfaz sin tener que aprender antes un toolchain pesado, Zap es el camino más corto entre una carpeta vacía y una app corriendo.
 
 ## Estado
 
 Zap está enfocado actualmente en la experiencia de desarrollo `0.1`.
 
 - Runtime centrado en desarrollo
+- Runtime centrado en frontend; no ejecuta backend JavaScript
 - Routing estático basado en archivos
 - Estilos globales vía `public/styles/global.css`
 - Archivos que empiezan con `_` son módulos privados, no rutas públicas
@@ -43,6 +44,7 @@ go install github.com/melendezgg/zap@latest
 
 - **Cero configuración** - Un solo binario, sin toolchain de Node.js
 - **React 18** - Cargado vía CDN
+- **Imports de React** - Soporta `"react"`, `"react-dom"` y `"react-dom/client"`
 - **Hot reload** - Detecta cambios automáticamente
 - **TypeScript/JSX** - Soporte nativo vía esbuild
 - **Rutas multi-formato** - `.tsx`, `.jsx`, `.html`, `.js`
@@ -76,6 +78,8 @@ zap --help                 # Mostrar ayuda
 ## Ejemplo: `routes/index.tsx`
 
 ```tsx
+import { useState } from "react";
+
 export const title = "Inicio - Mi App";
 
 export default function App() {
@@ -92,6 +96,12 @@ export default function App() {
   );
 }
 ```
+
+## Alcance Frontend
+
+Zap es intencionalmente un runtime de frontend. No ejecuta backend JavaScript, no instala paquetes npm, no provee rutas API y no se conecta a bases de datos. Si tu frontend necesita datos, ejecuta un servidor API/backend aparte y consúmelo desde Zap con `fetch`.
+
+Zap solo maneja un conjunto pequeño de imports de paquetes controlados por ahora: `"react"`, `"react-dom"` y `"react-dom/client"`. Esos imports se mapean a los scripts CDN de React que Zap inyecta en runtime, así que el código puede seguir patrones normales de React sin requerir `node_modules`.
 
 ## Archivos Privados
 
@@ -113,27 +123,26 @@ export default function App() {
 
 ## Imports de React
 
-Zap `0.1` sirve React desde CDN y espera que APIs de React como `useState` estén disponibles como globales en runtime.
+Zap `0.1` sirve React desde CDN y soporta imports normales desde `"react"`, `"react-dom"` y `"react-dom/client"`.
 
-Eso significa:
-
-- todavía no importes desde `"react"` ni `"react-dom"`
-- usa `useState`, `useEffect` y APIs similares directamente
-- los componentes locales importados deben seguir la misma regla
-
-Esto funciona:
+Puedes escribir componentes con imports estándar de React:
 
 ```tsx
+import { useState } from "react";
+
 export default function App() {
   const [count, setCount] = useState(0);
   return <button onClick={() => setCount(count + 1)}>{count}</button>;
 }
 ```
 
-Esto todavía no funciona:
+Para ejemplos pequeños, los hooks de React también están disponibles como globales:
 
 ```tsx
-import { useState } from "react";
+export default function App() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
 ```
 
 ## Estilos Globales
@@ -157,7 +166,7 @@ body {
 
 ## Cómo Funciona
 
-Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarrollo. Las rutas se descubren desde `routes/`, los archivos privados con prefijo `_` quedan fuera del router público pero se pueden reutilizar localmente, y `public/styles/global.css` se inyecta automáticamente cuando existe.
+Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarrollo. Las rutas se descubren desde `routes/`, los archivos privados con prefijo `_` quedan fuera del router público pero se pueden reutilizar localmente, los imports de React se mapean a globals del CDN, y `public/styles/global.css` se inyecta automáticamente cuando existe.
 
 Zap observa cambios cada 2 segundos, limpia su cache de bundles en memoria y vuelve a escanear las rutas.
 
