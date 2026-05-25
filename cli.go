@@ -113,7 +113,7 @@ INICIO RÁPIDO:
 
 CARACTERÍSTICAS:
   - Un solo binario
-  - React 19.2 embebido
+  - React 19.2 embedded
   - Hot-reload automático
   - TypeScript/JSX nativo
   - HTML/JS estático soportado

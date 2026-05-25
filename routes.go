@@ -55,7 +55,7 @@ func scanAllRoutes() map[string]*RouteInfo {
 	routes := make(map[string]*RouteInfo)
 
 	if err := os.MkdirAll(routesDir, 0755); err != nil {
-		fmt.Printf("error creando %s: %v\n", routesDir, err)
+		fmt.Printf("error creating %s: %v\n", routesDir, err)
 		return routes
 	}
 
@@ -70,11 +70,11 @@ func scanAllRoutes() map[string]*RouteInfo {
 		if current, exists := routes[route]; exists {
 			winner, loser := chooseRouteFile(current.File, next.File)
 			if winner == current.File {
-				fmt.Printf("  advertencia: conflicto de ruta %s, usando %s e ignorando %s\n", route, current.File, loser)
+				fmt.Printf("  warning: route conflict %s, using %s and ignoring %s\n", route, current.File, loser)
 				continue
 			}
 
-			fmt.Printf("  advertencia: conflicto de ruta %s, usando %s e ignorando %s\n", route, next.File, loser)
+			fmt.Printf("  warning: route conflict %s, using %s and ignoring %s\n", route, next.File, loser)
 		}
 
 		fmt.Printf("  %s -> %s\n", route, path)

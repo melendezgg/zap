@@ -15,7 +15,7 @@ type watchedFile struct {
 func collectWatchedFiles() map[string]watchedFile {
 	files, err := collectWatchedFilesFrom([]string{routesDir, publicDir})
 	if err != nil {
-		fmt.Printf("advertencia: watcher: %v\n", err)
+		fmt.Printf("warning: watcher: %v\n", err)
 	}
 	return files
 }
@@ -94,9 +94,10 @@ func watchChanges() {
 		time.Sleep(2 * time.Second)
 		currentSnapshot := collectWatchedFiles()
 		if watchedFilesChanged(lastSnapshot, currentSnapshot) {
-			fmt.Println("Cambios detectados!")
+			fmt.Println("Changes detected!")
 			bundleCache.Clear()
 			routeStore.SetAll(scanAllRoutes())
+			warnSensitivePublicFiles()
 			lastSnapshot = currentSnapshot
 			devReload.broadcast()
 		}

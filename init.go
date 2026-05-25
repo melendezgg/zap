@@ -11,14 +11,14 @@ func magicInit() bool {
 		return false
 	}
 
-	fmt.Println("Carpeta vacia detectada. Inicializando proyecto Zap...")
+	fmt.Println("Empty project detected. Initializing Zap project...")
 	if err := createStarterProject(); err != nil {
-		fmt.Printf("error inicializando proyecto: %v\n", err)
+		fmt.Printf("error initializing project: %v\n", err)
 		return false
 	}
 
 	if _, err := os.Stat(routesDir); err == nil {
-		fmt.Println("Listo! Servidor iniciando...")
+		fmt.Println("Done. Starting server...")
 		fmt.Println()
 		return true
 	}
@@ -29,7 +29,7 @@ func createStarterProject() error {
 	dirs := []string{routesDir, "public/styles"}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0755); err != nil {
-			return fmt.Errorf("creando %s: %w", d, err)
+			return fmt.Errorf("creating %s: %w", d, err)
 		}
 	}
 
@@ -146,7 +146,7 @@ code {
 			continue
 		}
 		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-			return fmt.Errorf("escribiendo %s: %w", path, err)
+			return fmt.Errorf("writing %s: %w", path, err)
 		}
 		fmt.Printf("  %s\n", path)
 	}

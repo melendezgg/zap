@@ -37,8 +37,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if path == "/favicon.ico" {
 		faviconPath, ok := resolvePublicPath(path)
 		if !ok {
-			http.Error(w, "404 - Ruta no encontrada", http.StatusNotFound)
+			http.Error(w, "404 - Route not found", http.StatusNotFound)
 			logRequest(r.Method, path, http.StatusNotFound, start)
+			return
+		}
+		if isSensitivePublicFile(faviconPath) {
+			blockSensitivePublicFile(w, r, path, start)
 			return
 		}
 		if _, err := os.Stat(faviconPath); err == nil {
@@ -64,12 +68,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		staticPath, ok := resolvePublicPath(path)
 		if ok {
 			if fileInfo, err := os.Stat(staticPath); err == nil && !fileInfo.IsDir() {
+				if isSensitivePublicFile(staticPath) {
+					blockSensitivePublicFile(w, r, path, start)
+					return
+				}
 				http.ServeFile(w, r, staticPath)
 				logRequest(r.Method, path, http.StatusOK, start)
 				return
 			}
 		}
-		http.Error(w, "404 - Ruta no encontrada", http.StatusNotFound)
+		http.Error(w, "404 - Route not found", http.StatusNotFound)
 		logRequest(r.Method, path, http.StatusNotFound, start)
 		return
 	}
@@ -78,7 +86,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if info.Type == "html" {
 		content, err := os.ReadFile(info.File)
 		if err != nil {
-			http.Error(w, "Error leyendo archivo", http.StatusInternalServerError)
+			http.Error(w, "Error reading file", http.StatusInternalServerError)
 			logRequest(r.Method, path, http.StatusInternalServerError, start)
 			return
 		}
@@ -92,7 +100,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if info.Type == "js" {
 		content, err := os.ReadFile(info.File)
 		if err != nil {
-			http.Error(w, "Error leyendo archivo", http.StatusInternalServerError)
+			http.Error(w, "Error reading file", http.StatusInternalServerError)
 			logRequest(r.Method, path, http.StatusInternalServerError, start)
 			return
 		}
@@ -126,7 +134,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Error(w, "404 - Ruta no encontrada", http.StatusNotFound)
+	http.Error(w, "404 - Route not found", http.StatusNotFound)
 	logRequest(r.Method, path, http.StatusNotFound, start)
 }
 
@@ -136,7 +144,7 @@ func isReadMethod(method string) bool {
 
 func methodNotAllowed(w http.ResponseWriter, allow string) {
 	w.Header().Set("Allow", allow)
-	http.Error(w, "405 - Metodo no permitido", http.StatusMethodNotAllowed)
+	http.Error(w, "405 - Method not allowed", http.StatusMethodNotAllowed)
 }
 
 func writeResponse(w http.ResponseWriter, r *http.Request, status int, content []byte) {
@@ -150,4 +158,9 @@ func writeResponse(w http.ResponseWriter, r *http.Request, status int, content [
 func setDevResponseHeaders(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+}
+
+func blockSensitivePublicFile(w http.ResponseWriter, r *http.Request, path string, start time.Time) {
+	http.Error(w, "403 - Public file blocked for safety", http.StatusForbidden)
+	logRequest(r.Method, path, http.StatusForbidden, start)
 }

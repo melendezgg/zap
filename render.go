@@ -78,8 +78,8 @@ func renderDevErrorHTML(routePath string, err error) string {
 </head>
 <body>
     <div class="panel">
-        <h1>Error de compilacion</h1>
-        <p>La ruta <strong>%s</strong> no pudo compilarse.</p>
+        <h1>Compilation error</h1>
+        <p>Route <strong>%s</strong> could not be compiled.</p>
         <pre>%s</pre>
     </div>
 </body>

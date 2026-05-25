@@ -26,21 +26,22 @@ func main() {
 
 	magicInit()
 
-	fmt.Println("Escaneando...")
+	fmt.Println("Scanning...")
 	routeStore.SetAll(scanAllRoutes())
+	warnSensitivePublicFiles()
 
-	fmt.Printf("\nZAP %s (DESARROLLO) en %s\n", version, displayURL())
-	fmt.Printf("Rutas: %d\n\n", routeStore.Len())
-	fmt.Println("Hot-reload activo")
-	fmt.Printf("React %s (embebido)\n", reactVersion)
+	fmt.Printf("\nZAP %s (DEVELOPMENT) at %s\n", version, displayURL())
+	fmt.Printf("Routes: %d\n\n", routeStore.Len())
+	fmt.Println("Hot reload active")
+	fmt.Printf("React %s (embedded)\n", reactVersion)
 	fmt.Println()
-	fmt.Println("Servidor listo. Ctrl+C para detener.")
+	fmt.Println("Server ready. Press Ctrl+C to stop.")
 	fmt.Println()
 
 	go watchChanges()
 	http.HandleFunc("/", handler)
 	if err := http.ListenAndServe(listenAddress(), nil); err != nil {
-		fmt.Printf("error iniciando servidor en %s: %v\n", listenAddress(), err)
+		fmt.Printf("error starting server at %s: %v\n", listenAddress(), err)
 		os.Exit(1)
 	}
 }

@@ -75,6 +75,26 @@ func TestHandlerServesPublicFiles(t *testing.T) {
 	}
 }
 
+func TestHandlerBlocksSensitivePublicFiles(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"public/.env":        "TOKEN=secret",
+		"public/config.json": `{"token":"secret"}`,
+		"public/private.key": "secret",
+	})
+	routeStore.SetAll(map[string]*RouteInfo{})
+
+	for _, path := range []string{"/.env", "/config.json", "/private.key"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+
+		handler(rec, req)
+
+		if rec.Code != http.StatusForbidden {
+			t.Fatalf("expected 403 for %s, got %d", path, rec.Code)
+		}
+	}
+}
+
 func TestHandlerDoesNotServePublicDirectories(t *testing.T) {
 	withTempProject(t, map[string]string{
 		"public/assets/logo.txt": "logo",
