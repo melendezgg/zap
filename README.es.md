@@ -30,7 +30,7 @@ zap
 # Abrir http://localhost:8080
 ```
 
-Con eso ya tienes un sitio inicial funcionando. Si `routes/` todavía no existe, Zap crea las rutas iniciales e inicia el servidor de desarrollo de inmediato.
+Con eso ya tienes un sitio inicial funcionando. Si `routes/` todavía no existe, Zap crea las rutas iniciales junto con `public/styles/global.css` e inicia el servidor de desarrollo de inmediato.
 
 ## Instalación
 
@@ -58,8 +58,8 @@ go install github.com/melendezgg/zap@latest
 ```text
 mi-app/
 ├── routes/
-│   ├── index.tsx          -> Página principal (/)
-│   ├── about.tsx          -> Acerca de (/about)
+│   ├── index.tsx          -> Home page (/)
+│   ├── about.tsx          -> About page (/about)
 │   ├── contact.html       -> HTML estático (/contact)
 │   └── _Card.tsx          -> Módulo privado reutilizable
 └── public/
@@ -80,7 +80,7 @@ zap --help                 # Mostrar ayuda
 ```tsx
 import { useState } from "react";
 
-export const title = "Inicio - Mi App";
+export const title = "Home - My App";
 
 export default function App() {
   const [count, setCount] = useState(0);
@@ -88,9 +88,9 @@ export default function App() {
   return (
     <div>
       <h1>{title}</h1>
-      <p>Contador: {count}</p>
+      <p>Count: {count}</p>
       <button onClick={() => setCount(count + 1)}>
-        Incrementar
+        Increment
       </button>
     </div>
   );

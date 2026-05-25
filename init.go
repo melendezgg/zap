@@ -26,7 +26,7 @@ func magicInit() bool {
 }
 
 func createStarterProject() error {
-	dirs := []string{routesDir}
+	dirs := []string{routesDir, "public/styles"}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0755); err != nil {
 			return fmt.Errorf("creando %s: %w", d, err)
@@ -36,32 +36,110 @@ func createStarterProject() error {
 	files := map[string]string{
 		"routes/index.tsx": `import { useState } from "react";
 
-export const title = "Inicio - Zap App";
+export const title = "Home - Zap App";
 
 export default function App() {
   const [count, setCount] = useState(0);
 
   return (
-    <div style={{ padding: "50px" }}>
-      <h1>Zap!</h1>
-      <p>Tu app esta viva.</p>
-      <p>Contador: {count}</p>
-      <button onClick={() => setCount(count + 1)}>Incrementar</button>
-    </div>
+    <main className="container">
+      <nav>
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+      </nav>
+
+      <h1>Zap App</h1>
+      <p>
+        Edit files in <code>routes/</code> and the browser will update
+        automatically.
+      </p>
+
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </main>
   );
 }
 `,
-		"routes/about.tsx": `export const title = "Acerca de - Zap App";
+		"routes/about.tsx": `export const title = "About - Zap App";
 
 export default function About() {
   return (
-    <div style={{ padding: "50px" }}>
-      <h1>Acerca de</h1>
-      <a href="/">Volver al inicio</a>
-    </div>
+    <main className="container">
+      <nav>
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+      </nav>
+
+      <h1>About</h1>
+      <p>
+        Zap serves HTML, JavaScript, JSX, and TSX from a single executable so
+        you can sketch frontends quickly.
+      </p>
+    </main>
   );
 }
-`}
+`,
+		"public/styles/global.css": `:root {
+  color: #222;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 720px;
+  padding: 48px 24px;
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+a {
+  color: #0b57d0;
+}
+
+h1 {
+  font-size: 40px;
+  line-height: 1.1;
+  margin: 0 0 16px;
+}
+
+p {
+  margin: 0 0 16px;
+}
+
+button {
+  font: inherit;
+  padding: 8px 12px;
+}
+
+code {
+  background: #f2f2f2;
+  padding: 2px 4px;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 32px 18px;
+  }
+
+  h1 {
+    font-size: 32px;
+  }
+}
+`,
+	}
 
 	for path, content := range files {
 		if _, err := os.Stat(path); err == nil {

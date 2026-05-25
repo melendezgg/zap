@@ -30,7 +30,7 @@ zap
 # Open http://localhost:8080
 ```
 
-That is enough to get a site running. If `routes/` does not exist yet, Zap creates the starter routes and immediately starts the dev server.
+That is enough to get a site running. If `routes/` does not exist yet, Zap creates starter routes plus `public/styles/global.css`, then immediately starts the dev server.
 
 ## Installation
 

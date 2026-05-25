@@ -22,9 +22,18 @@ func TestCreateStarterProjectCreatesStarterRoutes(t *testing.T) {
 	if !strings.Contains(string(content), `import { useState } from "react";`) {
 		t.Fatalf("expected React import in starter page: %s", content)
 	}
+	if !strings.Contains(string(content), `className="container"`) {
+		t.Fatalf("expected starter page layout classes: %s", content)
+	}
+	if !strings.Contains(string(content), `Count: {count}`) {
+		t.Fatalf("expected English starter content: %s", content)
+	}
 
 	if _, err := os.Stat(filepath.Join(routesDir, "about.tsx")); err != nil {
 		t.Fatalf("expected about route: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(publicDir, "styles", "global.css")); err != nil {
+		t.Fatalf("expected global css: %v", err)
 	}
 }
 
