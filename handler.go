@@ -11,6 +11,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	path := r.URL.Path
 
+	if path == "/__zap/events" {
+		handleDevEvents(w, r)
+		return
+	}
+
 	// Favicon
 	if path == "/favicon.ico" {
 		faviconPath, ok := resolvePublicPath(path)
@@ -60,7 +65,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(content)
+		w.Write([]byte(injectDevReloadScript(string(content))))
 		logRequest(r.Method, path, http.StatusOK, start)
 		return
 	}

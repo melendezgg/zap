@@ -7,10 +7,12 @@ import (
 
 // Configuración
 var config = &Config{
-	Port: ":8080",
+	Host: "localhost",
+	Port: "8080",
 }
 
 type Config struct {
+	Host string
 	Port string
 }
 

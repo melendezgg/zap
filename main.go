@@ -10,16 +10,18 @@ var version = "dev"
 
 // === MAIN ===
 func main() {
-	parseArgs()
-	if len(os.Args) >= 2 {
-		switch os.Args[1] {
-		case "--help", "-h":
-			printUsage()
-			return
-		case "--version", "-v":
-			printVersion()
-			return
-		}
+	action, err := parseArgs(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	switch action {
+	case cliActionHelp:
+		printUsage()
+		return
+	case cliActionVersion:
+		printVersion()
+		return
 	}
 
 	magicInit()
@@ -27,7 +29,7 @@ func main() {
 	fmt.Println("Escaneando...")
 	routeStore.SetAll(scanAllRoutes())
 
-	fmt.Printf("\nZAP %s (DESARROLLO) en http://localhost%s\n", version, config.Port)
+	fmt.Printf("\nZAP %s (DESARROLLO) en %s\n", version, displayURL())
 	fmt.Printf("Rutas: %d\n\n", routeStore.Len())
 	fmt.Println("Hot-reload activo")
 	fmt.Println("React 18 (CDN)")
@@ -37,8 +39,8 @@ func main() {
 
 	go watchChanges()
 	http.HandleFunc("/", handler)
-	if err := http.ListenAndServe(config.Port, nil); err != nil {
-		fmt.Printf("error iniciando servidor en %s: %v\n", config.Port, err)
+	if err := http.ListenAndServe(listenAddress(), nil); err != nil {
+		fmt.Printf("error iniciando servidor en %s: %v\n", listenAddress(), err)
 		os.Exit(1)
 	}
 }

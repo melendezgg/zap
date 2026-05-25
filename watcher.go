@@ -56,6 +56,7 @@ func watchChanges() {
 			bundleCache.Clear()
 			routeStore.SetAll(scanAllRoutes())
 			lastSnapshot = currentSnapshot
+			devReload.broadcast()
 		}
 	}
 }

@@ -16,7 +16,7 @@ func generateHTML(jsCode string, css string, title string) string {
 		styleTag = fmt.Sprintf("<style>%s</style>", css)
 	}
 
-	return fmt.Sprintf(`<!DOCTYPE html>
+	return injectDevReloadScript(fmt.Sprintf(`<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -39,11 +39,11 @@ func generateHTML(jsCode string, css string, title string) string {
         }
     </script>
 </body>
-</html>`, html.EscapeString(title), styleTag, reactCDN, reactDOMCDN, jsCode)
+</html>`, html.EscapeString(title), styleTag, reactCDN, reactDOMCDN, jsCode))
 }
 
 func renderDevErrorHTML(routePath string, err error) string {
-	return fmt.Sprintf(`<!DOCTYPE html>
+	return injectDevReloadScript(fmt.Sprintf(`<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -89,5 +89,5 @@ func renderDevErrorHTML(routePath string, err error) string {
         <pre>%s</pre>
     </div>
 </body>
-</html>`, html.EscapeString(routePath), html.EscapeString(err.Error()))
+</html>`, html.EscapeString(routePath), html.EscapeString(err.Error())))
 }
