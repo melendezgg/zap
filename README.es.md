@@ -121,6 +121,16 @@ export default function App() {
 }
 ```
 
+## Conflictos de Rutas
+
+Si varios archivos producen la misma ruta, Zap mantiene el resultado determinístico y muestra una advertencia. La prioridad actual es:
+
+```text
+.tsx > .jsx > .html > .js
+```
+
+Por ejemplo, si existen `routes/about.tsx` y `routes/about.html`, `/about` usa `routes/about.tsx` y Zap reporta que `routes/about.html` fue ignorado.
+
 ## Imports de React
 
 Zap `0.1` sirve React desde CDN y soporta imports normales desde `"react"`, `"react-dom"` y `"react-dom/client"`.
