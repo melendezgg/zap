@@ -8,11 +8,11 @@ import (
 
 const reactVersion = "19.2.6"
 
-//go:embed internal/vendor/react/*.mjs
+//go:embed internal/assets/react/*.mjs
 var vendorAssets embed.FS
 
 func handleVendorAsset(w http.ResponseWriter, r *http.Request) (bool, int) {
-	if !strings.HasPrefix(r.URL.Path, "/__zap/vendor/") {
+	if !strings.HasPrefix(r.URL.Path, "/__zap/assets/") {
 		return false, 0
 	}
 
@@ -21,13 +21,13 @@ func handleVendorAsset(w http.ResponseWriter, r *http.Request) (bool, int) {
 		return true, http.StatusMethodNotAllowed
 	}
 
-	name := strings.TrimPrefix(r.URL.Path, "/__zap/vendor/")
+	name := strings.TrimPrefix(r.URL.Path, "/__zap/assets/")
 	if name == "" || strings.Contains(name, "/") || !strings.HasSuffix(name, ".mjs") {
 		http.NotFound(w, r)
 		return true, http.StatusNotFound
 	}
 
-	content, err := vendorAssets.ReadFile("internal/vendor/react/" + name)
+	content, err := vendorAssets.ReadFile("internal/assets/react/" + name)
 	if err != nil {
 		http.NotFound(w, r)
 		return true, http.StatusNotFound
@@ -39,9 +39,9 @@ func handleVendorAsset(w http.ResponseWriter, r *http.Request) (bool, int) {
 }
 
 func reactRuntimeImportScript() string {
-	return `import React from "/__zap/vendor/react.development.mjs";
-import * as ReactDOM from "/__zap/vendor/react-dom.development.mjs";
-import { createRoot, hydrateRoot } from "/__zap/vendor/react-dom-client.development.mjs";
+	return `import React from "/__zap/assets/react/react.development.mjs";
+import * as ReactDOM from "/__zap/assets/react/react-dom.development.mjs";
+import { createRoot, hydrateRoot } from "/__zap/assets/react/react-dom-client.development.mjs";
 
 window.React = React;
 window.ReactDOM = { ...ReactDOM, createRoot, hydrateRoot };
