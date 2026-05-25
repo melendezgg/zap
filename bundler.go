@@ -51,11 +51,7 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 	})
 
 	if len(result.Errors) > 0 {
-		msg := ""
-		for _, e := range result.Errors {
-			msg += e.Text + "\n"
-		}
-		return "", fmt.Errorf("esbuild: %s", msg)
+		return "", fmt.Errorf("esbuild:\n%s", formatBuildMessages(result.Errors))
 	}
 
 	if len(result.OutputFiles) > 0 {
@@ -65,6 +61,53 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 	}
 
 	return "", fmt.Errorf("no output")
+}
+
+func formatBuildMessages(messages []api.Message) string {
+	var builder strings.Builder
+	for i, message := range messages {
+		if i > 0 {
+			builder.WriteString("\n\n")
+		}
+		builder.WriteString(formatBuildMessage(message))
+	}
+	return builder.String()
+}
+
+func formatBuildMessage(message api.Message) string {
+	var builder strings.Builder
+	if message.Location != nil {
+		location := message.Location
+		if location.File != "" {
+			builder.WriteString(location.File)
+			if location.Line > 0 {
+				builder.WriteString(fmt.Sprintf(":%d", location.Line))
+				if location.Column > 0 {
+					builder.WriteString(fmt.Sprintf(":%d", location.Column+1))
+				}
+			}
+			builder.WriteString(": ")
+		}
+	}
+
+	builder.WriteString(message.Text)
+
+	if message.Location != nil && message.Location.LineText != "" {
+		location := message.Location
+		builder.WriteString("\n\n")
+		builder.WriteString(location.LineText)
+		if location.Column >= 0 {
+			builder.WriteString("\n")
+			builder.WriteString(strings.Repeat(" ", location.Column))
+			length := location.Length
+			if length < 1 {
+				length = 1
+			}
+			builder.WriteString(strings.Repeat("^", length))
+		}
+	}
+
+	return builder.String()
 }
 
 func reactGlobalsPlugin() api.Plugin {
