@@ -13,13 +13,13 @@ func TestGenerateHTMLUsesEmbeddedReactRuntime(t *testing.T) {
 	if strings.Contains(html, "unpkg.com") {
 		t.Fatalf("expected no CDN references: %s", html)
 	}
-	if !strings.Contains(html, "/__zap/vendor/react.development.mjs") {
+	if !strings.Contains(html, "/__zap/assets/react/react.development.mjs") {
 		t.Fatalf("expected embedded React import: %s", html)
 	}
-	if !strings.Contains(html, "/__zap/vendor/react-dom-client.development.mjs") {
+	if !strings.Contains(html, "/__zap/assets/react/react-dom-client.development.mjs") {
 		t.Fatalf("expected embedded ReactDOM import: %s", html)
 	}
-	if !strings.Contains(html, "/__zap/vendor/react-dom.development.mjs") {
+	if !strings.Contains(html, "/__zap/assets/react/react-dom.development.mjs") {
 		t.Fatalf("expected embedded ReactDOM import: %s", html)
 	}
 	if !strings.Contains(html, `type="module"`) {
@@ -34,7 +34,7 @@ func TestGenerateHTMLUsesEmbeddedReactRuntime(t *testing.T) {
 }
 
 func TestHandlerServesVendorAssets(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/__zap/vendor/react.development.mjs", nil)
+	req := httptest.NewRequest(http.MethodGet, "/__zap/assets/react/react.development.mjs", nil)
 	rec := httptest.NewRecorder()
 
 	handler(rec, req)
@@ -51,7 +51,7 @@ func TestHandlerServesVendorAssets(t *testing.T) {
 }
 
 func TestHandlerServesReactDOMVendorAsset(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/__zap/vendor/react-dom.development.mjs", nil)
+	req := httptest.NewRequest(http.MethodGet, "/__zap/assets/react/react-dom.development.mjs", nil)
 	rec := httptest.NewRecorder()
 
 	handler(rec, req)
@@ -68,7 +68,7 @@ func TestHandlerServesReactDOMVendorAsset(t *testing.T) {
 }
 
 func TestHandlerRejectsUnsupportedVendorMethods(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/__zap/vendor/react.development.mjs", nil)
+	req := httptest.NewRequest(http.MethodPost, "/__zap/assets/react/react.development.mjs", nil)
 	rec := httptest.NewRecorder()
 
 	handler(rec, req)

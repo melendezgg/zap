@@ -12,7 +12,7 @@ const reactVersion = "19.2.6"
 var vendorAssets embed.FS
 
 func handleVendorAsset(w http.ResponseWriter, r *http.Request) (bool, int) {
-	if !strings.HasPrefix(r.URL.Path, "/__zap/assets/") {
+	if !strings.HasPrefix(r.URL.Path, "/__zap/assets/react/") {
 		return false, 0
 	}
 
@@ -21,7 +21,7 @@ func handleVendorAsset(w http.ResponseWriter, r *http.Request) (bool, int) {
 		return true, http.StatusMethodNotAllowed
 	}
 
-	name := strings.TrimPrefix(r.URL.Path, "/__zap/assets/")
+	name := strings.TrimPrefix(r.URL.Path, "/__zap/assets/react/")
 	if name == "" || strings.Contains(name, "/") || !strings.HasSuffix(name, ".mjs") {
 		http.NotFound(w, r)
 		return true, http.StatusNotFound

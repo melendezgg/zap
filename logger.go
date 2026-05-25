@@ -20,5 +20,5 @@ func shouldSkipRequestLog(path string, status int) bool {
 	if status >= 400 {
 		return false
 	}
-	return strings.HasPrefix(path, "/__zap/vendor/") || path == "/__zap/events"
+	return strings.HasPrefix(path, "/__zap/assets/react/") || path == "/__zap/events"
 }
