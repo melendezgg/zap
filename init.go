@@ -12,17 +12,31 @@ func magicInit() bool {
 	}
 
 	fmt.Println("Carpeta vacia detectada. Inicializando proyecto Zap...")
+	if err := createStarterProject(); err != nil {
+		fmt.Printf("error inicializando proyecto: %v\n", err)
+		return false
+	}
 
+	if _, err := os.Stat(routesDir); err == nil {
+		fmt.Println("Listo! Servidor iniciando...")
+		fmt.Println()
+		return true
+	}
+	return false
+}
+
+func createStarterProject() error {
 	dirs := []string{routesDir}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0755); err != nil {
-			fmt.Printf("error creando %s: %v\n", d, err)
-			return false
+			return fmt.Errorf("creando %s: %w", d, err)
 		}
 	}
 
 	files := map[string]string{
-		"routes/index.tsx": `export const title = "Inicio - Zap App";
+		"routes/index.tsx": `import { useState } from "react";
+
+export const title = "Inicio - Zap App";
 
 export default function App() {
   const [count, setCount] = useState(0);
@@ -50,14 +64,14 @@ export default function About() {
 `}
 
 	for path, content := range files {
+		if _, err := os.Stat(path); err == nil {
+			continue
+		}
 		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
-			fmt.Printf("error escribiendo %s: %v\n", path, err)
-			return false
+			return fmt.Errorf("escribiendo %s: %w", path, err)
 		}
 		fmt.Printf("  %s\n", path)
 	}
 
-	fmt.Println("Listo! Servidor iniciando...")
-	fmt.Println()
-	return true
+	return nil
 }

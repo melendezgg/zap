@@ -30,7 +30,7 @@ zap
 # Abrir http://localhost:8080
 ```
 
-Con eso ya tienes un sitio inicial funcionando.
+Con eso ya tienes un sitio inicial funcionando. Si `routes/` todavía no existe, Zap crea las rutas iniciales e inicia el servidor de desarrollo de inmediato.
 
 ## Instalación
 
