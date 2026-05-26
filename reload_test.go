@@ -46,6 +46,17 @@ func TestReloadHubBroadcastsToSubscribers(t *testing.T) {
 	}
 }
 
+func TestReloadHubCloseSignalsSubscribers(t *testing.T) {
+	hub := newReloadHub()
+	hub.close()
+
+	select {
+	case <-hub.done:
+	default:
+		t.Fatal("expected reload hub shutdown signal")
+	}
+}
+
 func TestRenderDevErrorHTMLIncludesReloadClient(t *testing.T) {
 	result := renderDevErrorHTML("/labs", errors.New("compile failed"))
 

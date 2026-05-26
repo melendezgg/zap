@@ -10,11 +10,14 @@ import (
 type reloadHub struct {
 	mu      sync.Mutex
 	clients map[chan struct{}]struct{}
+	done    chan struct{}
+	once    sync.Once
 }
 
 func newReloadHub() *reloadHub {
 	return &reloadHub{
 		clients: make(map[chan struct{}]struct{}),
+		done:    make(chan struct{}),
 	}
 }
 
@@ -45,12 +48,18 @@ func (h *reloadHub) broadcast() {
 	}
 }
 
+func (h *reloadHub) close() {
+	h.once.Do(func() {
+		close(h.done)
+	})
+}
+
 var devReload = newReloadHub()
 
 func handleDevEvents(w http.ResponseWriter, r *http.Request) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		http.Error(w, "streaming no soportado", http.StatusInternalServerError)
+		http.Error(w, "streaming is not supported", http.StatusInternalServerError)
 		return
 	}
 
@@ -68,6 +77,8 @@ func handleDevEvents(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-r.Context().Done():
+			return
+		case <-devReload.done:
 			return
 		case <-events:
 			fmt.Fprint(w, "event: reload\ndata: changed\n\n")

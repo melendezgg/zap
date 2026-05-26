@@ -1,9 +1,14 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 var version = "dev"
@@ -39,9 +44,44 @@ func main() {
 	fmt.Println()
 
 	go watchChanges()
-	http.HandleFunc("/", handler)
-	if err := http.ListenAndServe(listenAddress(), nil); err != nil {
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handler)
+
+	server := &http.Server{
+		Addr:    listenAddress(),
+		Handler: mux,
+	}
+
+	serverErrors := make(chan error, 1)
+	go func() {
+		serverErrors <- server.ListenAndServe()
+	}()
+
+	stopSignals := make(chan os.Signal, 1)
+	signal.Notify(stopSignals, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(stopSignals)
+
+	select {
+	case err := <-serverErrors:
+		if errors.Is(err, http.ErrServerClosed) {
+			return
+		}
 		fmt.Printf("error starting server at %s: %v\n", listenAddress(), err)
 		os.Exit(1)
+	case <-stopSignals:
+		fmt.Println("\nShutting down server...")
 	}
+
+	devReload.close()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		fmt.Printf("error shutting down server: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Server stopped.")
 }
