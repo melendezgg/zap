@@ -49,7 +49,7 @@ func TestParseArgsRejectsInvalidPort(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected invalid port error")
 	}
-	if !strings.Contains(err.Error(), "usa solo el numero") {
+	if !strings.Contains(err.Error(), "use only the number") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

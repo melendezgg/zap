@@ -21,20 +21,20 @@ func parseArgs(args []string) (cliAction, error) {
 	flags := flag.NewFlagSet("zap", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 
-	port := flags.String("port", config.Port, "puerto del servidor")
-	portShort := flags.String("P", config.Port, "puerto del servidor")
-	host := flags.String("host", config.Host, "host del servidor")
-	help := flags.Bool("help", false, "mostrar ayuda")
-	helpShort := flags.Bool("h", false, "mostrar ayuda")
-	versionFlag := flags.Bool("version", false, "mostrar version")
-	versionShort := flags.Bool("v", false, "mostrar version")
+	port := flags.String("port", config.Port, "server port")
+	portShort := flags.String("P", config.Port, "server port")
+	host := flags.String("host", config.Host, "server host")
+	help := flags.Bool("help", false, "show help")
+	helpShort := flags.Bool("h", false, "show help")
+	versionFlag := flags.Bool("version", false, "show version")
+	versionShort := flags.Bool("v", false, "show version")
 
 	if err := flags.Parse(args); err != nil {
-		return cliActionServe, fmt.Errorf("%w\nusa `zap --help` para ver las opciones disponibles", err)
+		return cliActionServe, fmt.Errorf("%w\nuse `zap --help` to see available options", err)
 	}
 
 	if flags.NArg() > 0 {
-		return cliActionServe, fmt.Errorf("argumento desconocido: %s\nusa `zap --help` para ver las opciones disponibles", flags.Arg(0))
+		return cliActionServe, fmt.Errorf("unknown argument: %s\nuse `zap --help` to see available options", flags.Arg(0))
 	}
 
 	if *help || *helpShort {
@@ -66,18 +66,18 @@ func parseArgs(args []string) (cliAction, error) {
 
 func validateHost(host string) error {
 	if strings.TrimSpace(host) == "" {
-		return fmt.Errorf("host invalido: no puede estar vacio")
+		return fmt.Errorf("invalid host: cannot be empty")
 	}
 	return nil
 }
 
 func validatePort(port string) error {
 	if strings.Contains(port, ":") {
-		return fmt.Errorf("puerto invalido %q: usa solo el numero, por ejemplo `--port 3000`", port)
+		return fmt.Errorf("invalid port %q: use only the number, for example `--port 3000`", port)
 	}
 	value, err := strconv.Atoi(port)
 	if err != nil || value < 1 || value > 65535 {
-		return fmt.Errorf("puerto invalido %q: debe estar entre 1 y 65535", port)
+		return fmt.Errorf("invalid port %q: must be between 1 and 65535", port)
 	}
 	return nil
 }
@@ -90,42 +90,42 @@ func displayURL() string {
 	return "http://" + net.JoinHostPort(config.Host, config.Port)
 }
 
-// === MOSTRAR AYUDA ===
+// === SHOW HELP ===
 func printUsage() {
 	fmt.Printf(`
-ZAP - Runtime de desarrollo React/TypeScript
-Versión: %s
+ZAP - React/TypeScript development runtime
+Version: %s
 
-USO:
-  zap                        Iniciar servidor de desarrollo
-  zap --port 3000            Puerto personalizado
-  zap --host 0.0.0.0         Host personalizado
-  zap --help                 Esta ayuda
-  zap --version              Mostrar versión
+USAGE:
+  zap                        Start the development server
+  zap --port 3000            Use a custom port
+  zap --host 0.0.0.0         Use a custom host
+  zap --help                 Show this help
+  zap --version              Show version
 
-NOTA:
-  0.1 está enfocado en desarrollo.
-  No hay modo de producción ni comando de build todavía.
+NOTE:
+  0.1 is focused on development.
+  There is no production mode or build command yet.
 
-INICIO RÁPIDO:
-  mkdir mi-app && cd mi-app && zap
-  -> Proyecto creado automáticamente
+QUICK START:
+  mkdir my-app && cd my-app && zap
+  -> Project created automatically
 
-CARACTERÍSTICAS:
-  - Un solo binario
+FEATURES:
+  - Single binary
   - React 19.2 embedded
-  - Hot-reload automático
-  - TypeScript/JSX nativo
-  - HTML/JS estático soportado
-  - Título por página (export const title)
-  - CSS global vía /public/styles/global.css
-  - Archivos privados con prefijo _
+  - Automatic hot reload
+  - Native TypeScript/JSX
+  - Static HTML/JS support
+  - Per-page title (export const title)
+  - Global CSS via /public/styles/global.css
+  - Private files with _ prefix
 
-ESTRUCTURA:
-  /routes/*.tsx,jsx,html,js  -> Rutas públicas
-  /routes/_*                 -> Módulos privados, no rutas públicas
-  /public/styles/global.css  -> Estilos globales automáticos
-  /public/                   -> Assets estáticos (opcional)
+STRUCTURE:
+  /routes/*.tsx,jsx,html,js  -> Public routes
+  /routes/_*                 -> Private modules, not public routes
+  /public/styles/global.css  -> Automatic global styles
+  /public/                   -> Static assets (optional)
 `, version)
 }
 

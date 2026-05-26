@@ -82,7 +82,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// HTML estático
+	// Static HTML
 	if info.Type == "html" {
 		content, err := os.ReadFile(info.File)
 		if err != nil {
@@ -96,7 +96,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// JS estático
+	// Static JS
 	if info.Type == "js" {
 		content, err := os.ReadFile(info.File)
 		if err != nil {

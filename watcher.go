@@ -63,7 +63,7 @@ func collectWatchedFilesFrom(roots []string) (map[string]watchedFile, error) {
 	}
 
 	if len(walkErrors) > 0 {
-		return files, fmt.Errorf("%d archivo(s) no se pudieron revisar; primero: %w", len(walkErrors), walkErrors[0])
+		return files, fmt.Errorf("%d file(s) could not be checked; first: %w", len(walkErrors), walkErrors[0])
 	}
 
 	return files, nil
@@ -87,7 +87,7 @@ func watchedFilesChanged(previous, current map[string]watchedFile) bool {
 	return false
 }
 
-// === HOT-RELOAD ===
+// === HOT RELOAD ===
 func watchChanges() {
 	lastSnapshot := collectWatchedFiles()
 	for {

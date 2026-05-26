@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Configuración
+// Configuration
 var config = &Config{
 	Host: "localhost",
 	Port: "8080",
@@ -16,13 +16,13 @@ type Config struct {
 	Port string
 }
 
-// Directorios
+// Directories
 const (
 	routesDir = "routes"
 	publicDir = "public"
 )
 
-// Archivos a ignorar
+// Ignored files
 var ignoreFiles = map[string]bool{
 	".DS_Store":  true,
 	"Thumbs.db":  true,

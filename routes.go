@@ -16,7 +16,7 @@ var routeExtensionPriority = map[string]int{
 	".js":   3,
 }
 
-// === EXTRAER TÍTULO DE TSX/JSX ===
+// === EXTRACT TSX/JSX TITLE ===
 func extractTitle(filePath string) string {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -33,7 +33,7 @@ func extractTitle(filePath string) string {
 	return "Zap App"
 }
 
-// === EXTRAER TÍTULO DE HTML ===
+// === EXTRACT HTML TITLE ===
 func extractTitleFromHTML(filePath string) string {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -50,7 +50,7 @@ func extractTitleFromHTML(filePath string) string {
 	return "Zap App"
 }
 
-// === ESCANEAR RUTAS ===
+// === SCAN ROUTES ===
 func scanAllRoutes() map[string]*RouteInfo {
 	routes := make(map[string]*RouteInfo)
 
@@ -117,7 +117,7 @@ func collectRouteFiles(root string) []string {
 func routePathForFile(root string, path string) (string, bool) {
 	relPath, err := filepath.Rel(root, path)
 	if err != nil {
-		fmt.Printf("error resolviendo ruta %s: %v\n", path, err)
+		fmt.Printf("error resolving route %s: %v\n", path, err)
 		return "", false
 	}
 	relPath = filepath.ToSlash(relPath)
