@@ -22,30 +22,10 @@ const (
 	publicDir = "public"
 )
 
-// Ignored files
-var ignoreFiles = map[string]bool{
-	".DS_Store":  true,
-	"Thumbs.db":  true,
-	".gitignore": true,
-	".swp":       true,
-	".swo":       true,
-	".swn":       true,
-	".bak":       true,
-	"~":          true,
-}
-
 func shouldIgnore(path string) bool {
 	base := filepath.Base(path)
-	for ignore := range ignoreFiles {
-		if strings.HasPrefix(base, ".") && ignore == base {
-			return true
-		}
-		if strings.HasSuffix(base, ignore) {
-			return true
-		}
-		if strings.HasSuffix(base, "~") {
-			return true
-		}
-	}
-	return false
+	return base == ".DS_Store" || base == "Thumbs.db" || base == ".gitignore" ||
+		strings.HasSuffix(base, ".swp") || strings.HasSuffix(base, ".swo") ||
+		strings.HasSuffix(base, ".swn") || strings.HasSuffix(base, ".bak") ||
+		strings.HasSuffix(base, "~")
 }
