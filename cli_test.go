@@ -73,3 +73,16 @@ func TestParseArgsReturnsHelpAndVersionActions(t *testing.T) {
 		t.Fatalf("expected version action, got %v", action)
 	}
 }
+
+func TestIsLocalOnlyHost(t *testing.T) {
+	for _, host := range []string{"localhost", "LOCALHOST", "127.0.0.1", "::1"} {
+		if !isLocalOnlyHost(host) {
+			t.Fatalf("expected %q to be local-only", host)
+		}
+	}
+	for _, host := range []string{"0.0.0.0", "::", "192.168.1.20", "devbox.local"} {
+		if isLocalOnlyHost(host) {
+			t.Fatalf("expected %q to be network-accessible", host)
+		}
+	}
+}

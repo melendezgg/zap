@@ -47,6 +47,7 @@ go install github.com/melendezgg/zap@latest
 - **Imports de React** - Soporta `"react"`, `"react-dom"` y `"react-dom/client"`
 - **Hot reload** - Detecta cambios automáticamente
 - **TypeScript/JSX** - Soporte nativo vía esbuild
+- **Source maps** - Source maps inline para stacks del navegador durante desarrollo
 - **Rutas multi-formato** - `.tsx`, `.jsx`, `.html`, `.js`
 - **Títulos dinámicos** - `export const title = "Título"`
 - **Archivos privados** - `_Componente.tsx`, `_utils.jsx`, `_helpers.js` no son rutas
@@ -179,6 +180,8 @@ body {
 Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarrollo. Las rutas se descubren desde `routes/`, los archivos privados con prefijo `_` quedan fuera del router público pero se pueden reutilizar localmente, los imports de React se mapean a globals del runtime embebido, y `public/styles/global.css` se inyecta automáticamente cuando existe.
 
 Zap usa notificaciones nativas del sistema de archivos con un debounce corto (excepto `.git` y `node_modules`), limpia su cache de salida en memoria y vuelve a escanear las rutas. Las rutas JSX/TSX mantienen un contexto incremental de esbuild para reutilizar el grafo de dependencias en compilaciones posteriores. El polling se conserva como fallback cuando las notificaciones nativas no están disponibles.
+
+Los fallos de compilación se registran con contexto estructurado en la terminal. Las páginas de error del navegador usan rutas relativas al proyecto y ocultan errores internos inesperados, mientras la terminal conserva el diagnóstico completo para depuración local.
 
 ## Ejemplos
 

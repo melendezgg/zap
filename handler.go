@@ -114,6 +114,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if info.Type == "page" {
 		bundledCode, err := bundleJSX(info.File, info.IsTS)
 		if err != nil {
+			logCompileError(path, err)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			writeResponse(w, r, http.StatusInternalServerError, []byte(renderDevErrorHTML(path, err)))
 			logRequest(r.Method, path, http.StatusInternalServerError, start)

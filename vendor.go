@@ -8,6 +8,11 @@ import (
 
 const reactVersion = "19.2.6"
 
+const mountAppScript = `if (typeof window.App !== 'undefined') {
+    const root = createRoot(document.getElementById('root'));
+    root.render(React.createElement(window.App));
+}`
+
 //go:embed internal/assets/react/*.mjs
 var vendorAssets embed.FS
 

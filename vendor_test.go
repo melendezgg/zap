@@ -3,12 +3,24 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 func TestGenerateHTMLUsesEmbeddedReactRuntime(t *testing.T) {
-	html := generateHTML("console.log('app');", "", "Test")
+	bundleCache.Clear()
+	dir := t.TempDir()
+	entry := filepath.Join(dir, "page.tsx")
+	if err := os.WriteFile(entry, []byte(`export default function App() { return <main>Test</main>; }`), 0644); err != nil {
+		t.Fatalf("write entry: %v", err)
+	}
+	bundle, err := bundleJSX(entry, true)
+	if err != nil {
+		t.Fatalf("bundle entry: %v", err)
+	}
+	html := generateHTML(bundle, "", "Test")
 
 	if strings.Contains(html, "unpkg.com") {
 		t.Fatalf("expected no CDN references: %s", html)

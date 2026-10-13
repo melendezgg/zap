@@ -36,6 +36,9 @@ func main() {
 	warnSensitivePublicFiles()
 
 	fmt.Printf("\nZAP %s (DEVELOPMENT) at %s\n", version, displayURL())
+	if !isLocalOnlyHost(config.Host) {
+		fmt.Println("Warning: network clients can access development bundles, source maps, and diagnostics.")
+	}
 	fmt.Printf("Routes: %d\n\n", routeStore.Len())
 	fmt.Println("Hot reload active")
 	fmt.Printf("React %s (embedded)\n", reactVersion)

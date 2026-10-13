@@ -2,8 +2,12 @@ package main
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/evanw/esbuild/pkg/api"
 )
 
 func TestInjectDevReloadScriptBeforeBody(t *testing.T) {
@@ -62,5 +66,40 @@ func TestRenderDevErrorHTMLIncludesReloadClient(t *testing.T) {
 
 	if !strings.Contains(result, `new EventSource("/__zap/events")`) {
 		t.Fatalf("expected reload client in dev error HTML: %s", result)
+	}
+}
+
+func TestRenderDevErrorHTMLUsesProjectRelativePaths(t *testing.T) {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	absPath := filepath.Join(workingDir, "routes", "broken.tsx")
+	buildErr := newCompileError("build", []api.Message{{
+		Text: "Expected identifier",
+		Location: &api.Location{
+			File:     absPath,
+			Line:     7,
+			Column:   3,
+			LineText: "bad code",
+		},
+	}})
+
+	result := renderDevErrorHTML("/broken", buildErr)
+	if strings.Contains(result, workingDir) {
+		t.Fatalf("did not expect absolute project path in browser error: %s", result)
+	}
+	if !strings.Contains(result, "routes/broken.tsx:7:4") {
+		t.Fatalf("expected relative diagnostic path: %s", result)
+	}
+}
+
+func TestRenderDevErrorHTMLHidesUnknownInternalErrors(t *testing.T) {
+	result := renderDevErrorHTML("/broken", errors.New("open /Users/private/secret: permission denied"))
+	if strings.Contains(result, "/Users/private/secret") {
+		t.Fatalf("did not expect internal path in browser error: %s", result)
+	}
+	if !strings.Contains(result, "See the Zap server log") {
+		t.Fatalf("expected safe fallback message: %s", result)
 	}
 }

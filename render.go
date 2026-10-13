@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html"
 )
@@ -23,20 +24,19 @@ func generateHTML(jsCode string, css string, title string) string {
 <body>
     <div id="root"></div>
     <script type="module">
-        %s
-
-        %s
-
-        if (typeof window.App !== 'undefined') {
-            const root = createRoot(document.getElementById('root'));
-            root.render(React.createElement(window.App));
-        }
+%s
     </script>
 </body>
-</html>`, html.EscapeString(title), styleTag, reactRuntimeImportScript(), jsCode))
+</html>`, html.EscapeString(title), styleTag, jsCode))
 }
 
 func renderDevErrorHTML(routePath string, err error) string {
+	errorMessage := "Compilation failed. See the Zap server log for details."
+	var buildErr *compileError
+	if errors.As(err, &buildErr) {
+		errorMessage = buildErr.browserMessage()
+	}
+
 	return injectDevReloadScript(fmt.Sprintf(`<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -83,5 +83,5 @@ func renderDevErrorHTML(routePath string, err error) string {
         <pre>%s</pre>
     </div>
 </body>
-</html>`, html.EscapeString(routePath), html.EscapeString(err.Error())))
+</html>`, html.EscapeString(routePath), html.EscapeString(errorMessage)))
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -134,6 +136,76 @@ func TestBundleJSXReusesIncrementalBuildContext(t *testing.T) {
 	}
 	if secondContext := bundleBuilds.get(key).context; secondContext != firstContext {
 		t.Fatal("expected esbuild context to be reused")
+	}
+}
+
+func TestBundleJSXIncludesInlineSourceMap(t *testing.T) {
+	bundleCache.Clear()
+	dir := t.TempDir()
+	entry := filepath.Join(dir, "page.tsx")
+	content := `export default function App() { return <main>Mapped</main>; }`
+	if err := os.WriteFile(entry, []byte(content), 0644); err != nil {
+		t.Fatalf("write entry: %v", err)
+	}
+
+	bundle, err := bundleJSX(entry, true)
+	if err != nil {
+		t.Fatalf("bundle entry: %v", err)
+	}
+	const marker = "sourceMappingURL=data:application/json;base64,"
+	index := strings.LastIndex(bundle, marker)
+	if index == -1 {
+		t.Fatal("expected inline source map")
+	}
+	encoded := strings.TrimSpace(bundle[index+len(marker):])
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		t.Fatalf("decode source map: %v", err)
+	}
+	var sourceMap struct {
+		Sources        []string `json:"sources"`
+		SourcesContent []string `json:"sourcesContent"`
+	}
+	if err := json.Unmarshal(decoded, &sourceMap); err != nil {
+		t.Fatalf("parse source map: %v", err)
+	}
+	if len(sourceMap.Sources) == 0 || len(sourceMap.SourcesContent) == 0 {
+		t.Fatalf("expected source paths and content in source map: %s", decoded)
+	}
+	if !strings.Contains(strings.Join(sourceMap.SourcesContent, "\n"), "Mapped") {
+		t.Fatal("expected original TSX in source map")
+	}
+}
+
+func TestBundleJSXSourceMapUsesProjectRelativePaths(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx": `export default function App() { return <main>Mapped</main>; }`,
+	})
+	bundleCache.Clear()
+
+	bundle, err := bundleJSX(filepath.Join("routes", "index.tsx"), true)
+	if err != nil {
+		t.Fatalf("bundle entry: %v", err)
+	}
+	const marker = "sourceMappingURL=data:application/json;base64,"
+	index := strings.LastIndex(bundle, marker)
+	if index == -1 {
+		t.Fatal("expected inline source map")
+	}
+	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(bundle[index+len(marker):]))
+	if err != nil {
+		t.Fatalf("decode source map: %v", err)
+	}
+	var sourceMap struct {
+		Sources []string `json:"sources"`
+	}
+	if err := json.Unmarshal(decoded, &sourceMap); err != nil {
+		t.Fatalf("parse source map: %v", err)
+	}
+	for _, source := range sourceMap.Sources {
+		if filepath.IsAbs(source) || pathEscapesRoot(filepath.FromSlash(source)) {
+			t.Fatalf("expected project-relative source path, got %q", source)
+		}
 	}
 }
 

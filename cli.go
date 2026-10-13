@@ -90,6 +90,14 @@ func displayURL() string {
 	return "http://" + net.JoinHostPort(config.Host, config.Port)
 }
 
+func isLocalOnlyHost(host string) bool {
+	if strings.EqualFold(strings.TrimSpace(host), "localhost") {
+		return true
+	}
+	ip := net.ParseIP(strings.TrimSpace(host))
+	return ip != nil && ip.IsLoopback()
+}
+
 // === SHOW HELP ===
 func printUsage() {
 	fmt.Printf(`

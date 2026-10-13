@@ -87,6 +87,12 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 	// quotes. This keeps projects with quotes in their names working and avoids
 	// treating Windows path separators as escape sequences.
 	entryPath := filepath.ToSlash(absPath)
+	if relativePath, relErr := filepath.Rel(workingDir, absPath); relErr == nil && !pathEscapesRoot(relativePath) {
+		entryPath = filepath.ToSlash(relativePath)
+		if !strings.HasPrefix(entryPath, "./") {
+			entryPath = "./" + entryPath
+		}
+	}
 	virtualEntry := fmt.Sprintf("import App from %s; window.App = App;", strconv.Quote(entryPath))
 
 	options := api.BuildOptions{
@@ -102,18 +108,25 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 		MinifyWhitespace:  false,
 		MinifyIdentifiers: false,
 		MinifySyntax:      false,
-		Sourcemap:         api.SourceMapNone,
+		Sourcemap:         api.SourceMapInline,
+		SourcesContent:    api.SourcesContentInclude,
 		Platform:          api.PlatformBrowser,
 		LegalComments:     api.LegalCommentsNone,
 		TreeShaking:       api.TreeShakingTrue,
 		AbsWorkingDir:     workingDir,
 		Plugins:           []api.Plugin{reactGlobalsPlugin()},
+		Banner: map[string]string{
+			"js": reactRuntimeImportScript(),
+		},
+		Footer: map[string]string{
+			"js": mountAppScript,
+		},
 	}
 
 	if build.context == nil {
 		buildContext, contextErr := api.Context(options)
 		if contextErr != nil {
-			return "", fmt.Errorf("esbuild context:\n%s", formatBuildMessages(contextErr.Errors))
+			return "", newCompileError("context", contextErr.Errors)
 		}
 		build.context = buildContext
 	}
@@ -122,7 +135,7 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 	result := build.context.Rebuild()
 
 	if len(result.Errors) > 0 {
-		return "", fmt.Errorf("esbuild:\n%s", formatBuildMessages(result.Errors))
+		return "", newCompileError("build", result.Errors)
 	}
 
 	if len(result.OutputFiles) > 0 {
@@ -132,6 +145,47 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 	}
 
 	return "", fmt.Errorf("no output")
+}
+
+type compileError struct {
+	Phase    string
+	Messages []api.Message
+}
+
+func newCompileError(phase string, messages []api.Message) *compileError {
+	return &compileError{Phase: phase, Messages: append([]api.Message(nil), messages...)}
+}
+
+func (e *compileError) Error() string {
+	return fmt.Sprintf("esbuild %s:\n%s", e.Phase, formatBuildMessages(e.Messages))
+}
+
+func (e *compileError) browserMessage() string {
+	messages := make([]api.Message, len(e.Messages))
+	copy(messages, e.Messages)
+	for i := range messages {
+		if messages[i].Location == nil {
+			continue
+		}
+		location := *messages[i].Location
+		location.File = safeDisplayPath(location.File)
+		messages[i].Location = &location
+	}
+	return fmt.Sprintf("esbuild %s:\n%s", e.Phase, formatBuildMessages(messages))
+}
+
+func safeDisplayPath(path string) string {
+	if path == "" || !filepath.IsAbs(path) {
+		return filepath.ToSlash(path)
+	}
+
+	workingDir, err := os.Getwd()
+	if err == nil {
+		if relative, relErr := filepath.Rel(workingDir, path); relErr == nil && !pathEscapesRoot(relative) {
+			return filepath.ToSlash(relative)
+		}
+	}
+	return filepath.Base(path)
 }
 
 func formatBuildMessages(messages []api.Message) string {
