@@ -75,15 +75,39 @@ func resolvePublicPath(requestPath string) (string, bool) {
 		return "", false
 	}
 
-	if relToPublic == "." {
-		return resolvedPath, true
-	}
-
-	if strings.HasPrefix(relToPublic, "..") || filepath.IsAbs(relToPublic) {
+	if pathEscapesRoot(relToPublic) {
 		return "", false
 	}
 
-	return resolvedPath, true
+	// filepath.Abs only provides lexical containment. Resolve links as well so
+	// a file inside public cannot point at a secret elsewhere on the filesystem.
+	realPublicRoot, err := filepath.EvalSymlinks(publicRoot)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return resolvedPath, true
+		}
+		return "", false
+	}
+
+	realResolvedPath, err := filepath.EvalSymlinks(resolvedPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return resolvedPath, true
+		}
+		return "", false
+	}
+
+	relToRealPublic, err := filepath.Rel(realPublicRoot, realResolvedPath)
+	if err != nil || pathEscapesRoot(relToRealPublic) {
+		return "", false
+	}
+
+	return realResolvedPath, true
+}
+
+func pathEscapesRoot(relativePath string) bool {
+	return filepath.IsAbs(relativePath) || relativePath == ".." ||
+		strings.HasPrefix(relativePath, ".."+string(filepath.Separator))
 }
 
 func isSensitivePublicFile(path string) bool {

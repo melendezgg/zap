@@ -66,6 +66,26 @@ func TestCollectWatchedFilesFromAllowsMissingOptionalRoot(t *testing.T) {
 	}
 }
 
+func TestCollectWatchedFilesIncludesProjectDependenciesOutsideRoutes(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx":       `import Card from "../components/Card"; export default Card;`,
+		"components/Card.tsx":    `export default function Card() { return null; }`,
+		"node_modules/pkg/index": "ignored",
+		".git/config":            "ignored",
+	})
+
+	files := collectWatchedFiles()
+	if _, ok := files[filepath.ToSlash(filepath.Join("components", "Card.tsx"))]; !ok {
+		t.Fatalf("expected project dependency to be watched: %#v", files)
+	}
+	if _, ok := files[filepath.ToSlash(filepath.Join("node_modules", "pkg", "index"))]; ok {
+		t.Fatal("did not expect node_modules to be watched")
+	}
+	if _, ok := files[filepath.ToSlash(filepath.Join(".git", "config"))]; ok {
+		t.Fatal("did not expect .git to be watched")
+	}
+}
+
 func writeTestFile(t *testing.T, path string, content string) {
 	t.Helper()
 

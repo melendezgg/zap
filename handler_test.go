@@ -143,6 +143,55 @@ func TestResolvePublicPathRejectsTraversal(t *testing.T) {
 	}
 }
 
+func TestResolvePublicPathRejectsSymlinkOutsidePublic(t *testing.T) {
+	dir := t.TempDir()
+	previousDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get cwd: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previousDir); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	if err := os.MkdirAll(publicDir, 0755); err != nil {
+		t.Fatalf("mkdir public: %v", err)
+	}
+	secretPath := filepath.Join(dir, "secret.txt")
+	if err := os.WriteFile(secretPath, []byte("secret"), 0644); err != nil {
+		t.Fatalf("write secret: %v", err)
+	}
+	if err := os.Symlink(secretPath, filepath.Join(publicDir, "leak.txt")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+
+	if path, ok := resolvePublicPath("/leak.txt"); ok {
+		t.Fatalf("expected external symlink to be rejected, resolved to %s", path)
+	}
+
+	routeStore.SetAll(map[string]*RouteInfo{})
+	req := httptest.NewRequest(http.MethodGet, "/leak.txt", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected external symlink to return 404, got %d", rec.Code)
+	}
+}
+
+func TestResolvePublicPathAllowsDotDotPrefixedFileName(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"public/..safe.txt": "safe",
+	})
+
+	path, ok := resolvePublicPath("/..safe.txt")
+	if !ok || filepath.Base(path) != "..safe.txt" {
+		t.Fatalf("expected safe dot-prefixed file, got path=%q ok=%v", path, ok)
+	}
+}
+
 func TestDevEventsRejectsHead(t *testing.T) {
 	req := httptest.NewRequest(http.MethodHead, "/__zap/events", nil)
 	rec := httptest.NewRecorder()

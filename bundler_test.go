@@ -60,6 +60,45 @@ export default function App() {
 	}
 }
 
+func TestBundleJSXSupportsReact19NamedImports(t *testing.T) {
+	bundleCache.Clear()
+	dir := t.TempDir()
+	entry := filepath.Join(dir, "page.tsx")
+	content := `import { useActionState, useOptimistic } from "react";
+import { preconnect, useFormStatus } from "react-dom";
+
+export default function App() {
+  return <main>{typeof useActionState}{typeof useOptimistic}{typeof preconnect}{typeof useFormStatus}</main>;
+}
+`
+
+	if err := os.WriteFile(entry, []byte(content), 0644); err != nil {
+		t.Fatalf("write entry: %v", err)
+	}
+
+	if _, err := bundleJSX(entry, true); err != nil {
+		t.Fatalf("expected React 19 named imports to bundle: %v", err)
+	}
+}
+
+func TestBundleJSXEscapesEntryPath(t *testing.T) {
+	bundleCache.Clear()
+	dir := filepath.Join(t.TempDir(), "developer's app")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatalf("mkdir entry directory: %v", err)
+	}
+	entry := filepath.Join(dir, "page.tsx")
+	content := `export default function App() { return <main>OK</main>; }`
+
+	if err := os.WriteFile(entry, []byte(content), 0644); err != nil {
+		t.Fatalf("write entry: %v", err)
+	}
+
+	if _, err := bundleJSX(entry, true); err != nil {
+		t.Fatalf("expected quoted entry path to bundle: %v", err)
+	}
+}
+
 func TestBundleJSXReturnsUsefulCompileErrors(t *testing.T) {
 	bundleCache.Clear()
 	dir := t.TempDir()

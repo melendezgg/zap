@@ -178,7 +178,7 @@ body {
 
 Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarrollo. Las rutas se descubren desde `routes/`, los archivos privados con prefijo `_` quedan fuera del router público pero se pueden reutilizar localmente, los imports de React se mapean a globals del runtime embebido, y `public/styles/global.css` se inyecta automáticamente cuando existe.
 
-Zap observa cambios cada 2 segundos, limpia su cache de bundles en memoria y vuelve a escanear las rutas.
+Zap observa cambios en el proyecto cada 2 segundos (excepto `.git` y `node_modules`), limpia su cache de bundles en memoria y vuelve a escanear las rutas.
 
 ## Ejemplos
 

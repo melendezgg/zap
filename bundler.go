@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/evanw/esbuild/pkg/api"
@@ -27,7 +28,11 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 		return cachedBundle, nil
 	}
 
-	virtualEntry := fmt.Sprintf("import App from '%s'; window.App = App;", absPath)
+	// Use a JavaScript string literal instead of interpolating the path between
+	// quotes. This keeps projects with quotes in their names working and avoids
+	// treating Windows path separators as escape sequences.
+	entryPath := filepath.ToSlash(absPath)
+	virtualEntry := fmt.Sprintf("import App from %s; window.App = App;", strconv.Quote(entryPath))
 
 	result := api.Build(api.BuildOptions{
 		Stdin: &api.StdinOptions{
@@ -143,6 +148,7 @@ func reactGlobalModule(path string) (string, error) {
 	case "react":
 		return `const React = window.React;
 export default React;
+export const Activity = React.Activity;
 export const Children = React.Children;
 export const Component = React.Component;
 export const Fragment = React.Fragment;
@@ -150,6 +156,10 @@ export const Profiler = React.Profiler;
 export const PureComponent = React.PureComponent;
 export const StrictMode = React.StrictMode;
 export const Suspense = React.Suspense;
+export const act = React.act;
+export const cache = React.cache;
+export const cacheSignal = React.cacheSignal;
+export const captureOwnerStack = React.captureOwnerStack;
 export const cloneElement = React.cloneElement;
 export const createContext = React.createContext;
 export const createElement = React.createElement;
@@ -160,16 +170,20 @@ export const isValidElement = React.isValidElement;
 export const lazy = React.lazy;
 export const memo = React.memo;
 export const startTransition = React.startTransition;
+export const use = React.use;
+export const useActionState = React.useActionState;
 export const useCallback = React.useCallback;
 export const useContext = React.useContext;
 export const useDebugValue = React.useDebugValue;
 export const useDeferredValue = React.useDeferredValue;
 export const useEffect = React.useEffect;
+export const useEffectEvent = React.useEffectEvent;
 export const useId = React.useId;
 export const useImperativeHandle = React.useImperativeHandle;
 export const useInsertionEffect = React.useInsertionEffect;
 export const useLayoutEffect = React.useLayoutEffect;
 export const useMemo = React.useMemo;
+export const useOptimistic = React.useOptimistic;
 export const useReducer = React.useReducer;
 export const useRef = React.useRef;
 export const useState = React.useState;
@@ -195,9 +209,18 @@ func reactDOMGlobalModule() string {
 		"flushSync",
 		"hydrate",
 		"hydrateRoot",
+		"preconnect",
+		"prefetchDNS",
+		"preinit",
+		"preinitModule",
+		"preload",
+		"preloadModule",
 		"render",
+		"requestFormReset",
 		"unmountComponentAtNode",
 		"unstable_batchedUpdates",
+		"useFormState",
+		"useFormStatus",
 		"version",
 	}
 

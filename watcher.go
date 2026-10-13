@@ -13,7 +13,10 @@ type watchedFile struct {
 }
 
 func collectWatchedFiles() map[string]watchedFile {
-	files, err := collectWatchedFilesFrom([]string{routesDir, publicDir})
+	// esbuild accepts relative imports anywhere in the project, so watching only
+	// routes and public can leave a cached bundle stale when (for example) a
+	// component in components/ changes.
+	files, err := collectWatchedFilesFrom([]string{"."})
 	if err != nil {
 		fmt.Printf("warning: watcher: %v\n", err)
 	}
@@ -38,7 +41,13 @@ func collectWatchedFilesFrom(roots []string) (map[string]watchedFile, error) {
 				walkErrors = append(walkErrors, err)
 				return nil
 			}
-			if entry == nil || entry.IsDir() {
+			if entry == nil {
+				return nil
+			}
+			if entry.IsDir() {
+				if path != root && shouldIgnoreWatchDir(entry.Name()) {
+					return filepath.SkipDir
+				}
 				return nil
 			}
 			if shouldIgnore(path) {
@@ -67,6 +76,10 @@ func collectWatchedFilesFrom(roots []string) (map[string]watchedFile, error) {
 	}
 
 	return files, nil
+}
+
+func shouldIgnoreWatchDir(name string) bool {
+	return name == ".git" || name == "node_modules"
 }
 
 func watchedFilesChanged(previous, current map[string]watchedFile) bool {
