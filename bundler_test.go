@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -96,6 +97,43 @@ func TestBundleJSXEscapesEntryPath(t *testing.T) {
 
 	if _, err := bundleJSX(entry, true); err != nil {
 		t.Fatalf("expected quoted entry path to bundle: %v", err)
+	}
+}
+
+func TestBundleJSXReusesIncrementalBuildContext(t *testing.T) {
+	bundleCache.Clear()
+	dir := t.TempDir()
+	entry := filepath.Join(dir, "page.tsx")
+	if err := os.WriteFile(entry, []byte(`export default function App() { return <main>First</main>; }`), 0644); err != nil {
+		t.Fatalf("write first entry: %v", err)
+	}
+
+	if _, err := bundleJSX(entry, true); err != nil {
+		t.Fatalf("first build: %v", err)
+	}
+	absPath, err := filepath.Abs(entry)
+	if err != nil {
+		t.Fatalf("absolute entry path: %v", err)
+	}
+	key := fmt.Sprintf("%s|%t", absPath, true)
+	firstContext := bundleBuilds.get(key).context
+	if firstContext == nil {
+		t.Fatal("expected build context after first build")
+	}
+
+	if err := os.WriteFile(entry, []byte(`export default function App() { return <main>Second</main>; }`), 0644); err != nil {
+		t.Fatalf("write second entry: %v", err)
+	}
+	bundleCache.Clear()
+	secondBundle, err := bundleJSX(entry, true)
+	if err != nil {
+		t.Fatalf("incremental rebuild: %v", err)
+	}
+	if !strings.Contains(secondBundle, "Second") {
+		t.Fatalf("expected rebuilt output, got %s", secondBundle)
+	}
+	if secondContext := bundleBuilds.get(key).context; secondContext != firstContext {
+		t.Fatal("expected esbuild context to be reused")
 	}
 }
 

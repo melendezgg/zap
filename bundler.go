@@ -6,11 +6,56 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/evanw/esbuild/pkg/api"
 )
 
 const reactGlobalsNamespace = "zap-react-globals"
+
+type bundleBuild struct {
+	mu      sync.Mutex
+	context api.BuildContext
+}
+
+type bundleBuildStore struct {
+	mu      sync.Mutex
+	entries map[string]*bundleBuild
+}
+
+func newBundleBuildStore() *bundleBuildStore {
+	return &bundleBuildStore{entries: make(map[string]*bundleBuild)}
+}
+
+func (s *bundleBuildStore) get(key string) *bundleBuild {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	entry := s.entries[key]
+	if entry == nil {
+		entry = &bundleBuild{}
+		s.entries[key] = entry
+	}
+	return entry
+}
+
+func (s *bundleBuildStore) dispose() {
+	s.mu.Lock()
+	entries := s.entries
+	s.entries = make(map[string]*bundleBuild)
+	s.mu.Unlock()
+
+	for _, entry := range entries {
+		entry.mu.Lock()
+		if entry.context != nil {
+			entry.context.Dispose()
+			entry.context = nil
+		}
+		entry.mu.Unlock()
+	}
+}
+
+var bundleBuilds = newBundleBuildStore()
 
 // === BUNDLE JSX/TSX ===
 func bundleJSX(entryFile string, isTS bool) (string, error) {
@@ -28,13 +73,23 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 		return cachedBundle, nil
 	}
 
+	// Serialize cache misses for the same route. Without this, simultaneous
+	// first requests can start duplicate esbuild jobs.
+	build := bundleBuilds.get(cacheKey)
+	build.mu.Lock()
+	defer build.mu.Unlock()
+
+	if cachedBundle, ok := bundleCache.Get(cacheKey); ok {
+		return cachedBundle, nil
+	}
+
 	// Use a JavaScript string literal instead of interpolating the path between
 	// quotes. This keeps projects with quotes in their names working and avoids
 	// treating Windows path separators as escape sequences.
 	entryPath := filepath.ToSlash(absPath)
 	virtualEntry := fmt.Sprintf("import App from %s; window.App = App;", strconv.Quote(entryPath))
 
-	result := api.Build(api.BuildOptions{
+	options := api.BuildOptions{
 		Stdin: &api.StdinOptions{
 			Contents:   virtualEntry,
 			ResolveDir: workingDir,
@@ -53,7 +108,18 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 		TreeShaking:       api.TreeShakingTrue,
 		AbsWorkingDir:     workingDir,
 		Plugins:           []api.Plugin{reactGlobalsPlugin()},
-	})
+	}
+
+	if build.context == nil {
+		buildContext, contextErr := api.Context(options)
+		if contextErr != nil {
+			return "", fmt.Errorf("esbuild context:\n%s", formatBuildMessages(contextErr.Errors))
+		}
+		build.context = buildContext
+	}
+
+	// Rebuild reuses esbuild's parsed dependency graph from the prior build.
+	result := build.context.Rebuild()
 
 	if len(result.Errors) > 0 {
 		return "", fmt.Errorf("esbuild:\n%s", formatBuildMessages(result.Errors))

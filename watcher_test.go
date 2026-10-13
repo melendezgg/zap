@@ -86,6 +86,48 @@ func TestCollectWatchedFilesIncludesProjectDependenciesOutsideRoutes(t *testing.
 	}
 }
 
+func TestProjectWatcherDebouncesRapidWrites(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "index.tsx")
+	writeTestFile(t, file, "first")
+
+	watcher, err := newProjectWatcher(dir)
+	if err != nil {
+		t.Fatalf("new project watcher: %v", err)
+	}
+	defer watcher.Close()
+
+	stop := make(chan struct{})
+	changes := make(chan struct{}, 4)
+	done := make(chan error, 1)
+	go func() {
+		done <- runProjectWatcher(watcher, stop, func() { changes <- struct{}{} })
+	}()
+
+	for _, content := range []string{"second", "third", "fourth"} {
+		if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+			t.Fatalf("write watched file: %v", err)
+		}
+	}
+
+	select {
+	case <-changes:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for debounced change")
+	}
+
+	select {
+	case <-changes:
+		t.Fatal("expected rapid writes to produce one change callback")
+	case <-time.After(2 * watchDebounceInterval):
+	}
+
+	close(stop)
+	if err := <-done; err != nil {
+		t.Fatalf("stop project watcher: %v", err)
+	}
+}
+
 func writeTestFile(t *testing.T, path string, content string) {
 	t.Helper()
 

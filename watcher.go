@@ -5,6 +5,13 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+)
+
+const (
+	watchDebounceInterval = 150 * time.Millisecond
+	watchFallbackInterval = 2 * time.Second
 )
 
 type watchedFile struct {
@@ -13,9 +20,6 @@ type watchedFile struct {
 }
 
 func collectWatchedFiles() map[string]watchedFile {
-	// esbuild accepts relative imports anywhere in the project, so watching only
-	// routes and public can leave a cached bundle stale when (for example) a
-	// component in components/ changes.
 	files, err := collectWatchedFilesFrom([]string{"."})
 	if err != nil {
 		fmt.Printf("warning: watcher: %v\n", err)
@@ -100,19 +104,133 @@ func watchedFilesChanged(previous, current map[string]watchedFile) bool {
 	return false
 }
 
-// === HOT RELOAD ===
-func watchChanges() {
-	lastSnapshot := collectWatchedFiles()
+func newProjectWatcher(root string) (*fsnotify.Watcher, error) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
+	}
+	if err := addWatchTree(watcher, root); err != nil {
+		watcher.Close()
+		return nil, err
+	}
+	return watcher, nil
+}
+
+func addWatchTree(watcher *fsnotify.Watcher, root string) error {
+	return filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry == nil || !entry.IsDir() {
+			return nil
+		}
+		if path != root && shouldIgnoreWatchDir(entry.Name()) {
+			return filepath.SkipDir
+		}
+		return watcher.Add(path)
+	})
+}
+
+func runProjectWatcher(watcher *fsnotify.Watcher, stop <-chan struct{}, onChange func()) error {
+	var debounceTimer *time.Timer
+	var debounce <-chan time.Time
+	defer func() {
+		if debounceTimer != nil {
+			debounceTimer.Stop()
+		}
+	}()
+
+	scheduleReload := func() {
+		if debounceTimer == nil {
+			debounceTimer = time.NewTimer(watchDebounceInterval)
+			debounce = debounceTimer.C
+			return
+		}
+		if !debounceTimer.Stop() {
+			select {
+			case <-debounceTimer.C:
+			default:
+			}
+		}
+		debounceTimer.Reset(watchDebounceInterval)
+		debounce = debounceTimer.C
+	}
+
 	for {
-		time.Sleep(2 * time.Second)
-		currentSnapshot := collectWatchedFiles()
-		if watchedFilesChanged(lastSnapshot, currentSnapshot) {
-			fmt.Println("Changes detected!")
-			bundleCache.Clear()
-			routeStore.SetAll(scanAllRoutes())
-			warnSensitivePublicFiles()
-			lastSnapshot = currentSnapshot
-			devReload.broadcast()
+		select {
+		case <-stop:
+			return nil
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return fmt.Errorf("filesystem watcher stopped")
+			}
+			fmt.Printf("warning: watcher: %v\n", err)
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return fmt.Errorf("filesystem watcher stopped")
+			}
+			if shouldIgnore(event.Name) {
+				continue
+			}
+			if event.Op&fsnotify.Create != 0 {
+				if info, err := os.Stat(event.Name); err == nil && info.IsDir() &&
+					!shouldIgnoreWatchDir(filepath.Base(event.Name)) {
+					if err := addWatchTree(watcher, event.Name); err != nil {
+						fmt.Printf("warning: watcher: adding %s: %v\n", event.Name, err)
+					}
+				}
+			}
+			if event.Op&(fsnotify.Create|fsnotify.Write|fsnotify.Remove|fsnotify.Rename) != 0 {
+				scheduleReload()
+			}
+		case <-debounce:
+			debounce = nil
+			onChange()
+		}
+	}
+}
+
+func reloadProject() {
+	fmt.Println("Changes detected!")
+	bundleCache.Clear()
+	routeStore.SetAll(scanAllRoutes())
+	warnSensitivePublicFiles()
+	devReload.broadcast()
+}
+
+// watchChanges prefers native filesystem events and falls back to polling if
+// the platform cannot initialize recursive watches for the project.
+func watchChanges() {
+	watcher, err := newProjectWatcher(".")
+	if err == nil {
+		runErr := runProjectWatcher(watcher, devReload.done, reloadProject)
+		watcher.Close()
+		if runErr == nil {
+			return
+		}
+		fmt.Printf("warning: watcher: %v; falling back to polling\n", runErr)
+	} else {
+		fmt.Printf("warning: watcher: %v; falling back to polling\n", err)
+	}
+
+	watchChangesByPolling(devReload.done)
+}
+
+func watchChangesByPolling(stop <-chan struct{}) {
+	lastSnapshot := collectWatchedFiles()
+	ticker := time.NewTicker(watchFallbackInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-stop:
+			return
+		case <-ticker.C:
+			currentSnapshot := collectWatchedFiles()
+			if watchedFilesChanged(lastSnapshot, currentSnapshot) {
+				lastSnapshot = currentSnapshot
+				reloadProject()
+			}
 		}
 	}
 }

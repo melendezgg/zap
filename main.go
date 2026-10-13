@@ -82,6 +82,7 @@ func main() {
 		fmt.Printf("error shutting down server: %v\n", err)
 		os.Exit(1)
 	}
+	bundleBuilds.dispose()
 
 	fmt.Println("Server stopped.")
 }

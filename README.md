@@ -178,7 +178,7 @@ body {
 
 Zap uses [esbuild](https://esbuild.github.io/) to bundle JSX/TSX for development. Routes are discovered from `routes/`, private files prefixed with `_` are excluded from the public router but can still be reused locally, React imports are mapped to embedded runtime globals, and `public/styles/global.css` is injected automatically when present.
 
-Zap watches the project every 2 seconds (excluding `.git` and `node_modules`), clears its in-memory bundle cache on changes, and rebuilds the route map.
+Zap uses native filesystem notifications with a short debounce (excluding `.git` and `node_modules`), clears its in-memory output cache on changes, and rebuilds the route map. JSX/TSX routes keep an incremental esbuild context so subsequent rebuilds can reuse the parsed dependency graph. A polling watcher is retained as a fallback when native notifications are unavailable.
 
 ## Examples
 
