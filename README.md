@@ -10,13 +10,32 @@ It is designed for frontend prototypes, demos, internal tools, small apps, and l
 
 ## Status
 
-Zap is currently focused on the `0.1` development experience.
+Zap is currently a pre-`1.0` development runtime. Its core workflow is usable, but its public conventions may still evolve while the project finds the smallest stable interface worth supporting long term.
 
-- Dev-only runtime for now
+- Development-only runtime
 - Frontend-only runtime; no backend JavaScript execution
 - Static file-based routing
 - Global styles via `public/styles/global.css`
 - Files starting with `_` are private modules, not public routes
+
+## Goals
+
+- Ship as a self-contained executable
+- Support frontend development with React, JSX, and TypeScript
+- Start from an empty directory without required configuration
+- Provide automatic reloads and fast feedback during development
+- Keep the workflow simple, transparent, and predictable
+
+## Non-goals
+
+- Replace Node.js as a general-purpose runtime
+- Become a full-stack framework
+- Manage deployments, hosting, or infrastructure
+- Provide an application backend, database layer, or authentication system
+- Compete with complete production build and distribution toolchains
+- Create a package ecosystem that replaces npm
+
+New features should reduce frontend development friction without making the basic `zap` workflow harder to understand. They should remain optional, fit inside the executable, and produce projects whose behavior can be understood by reading their files.
 
 ## Quick Start
 
@@ -137,7 +156,7 @@ For example, if both `routes/about.tsx` and `routes/about.html` exist, `/about` 
 
 ## React Imports
 
-Zap `0.1` serves an embedded React 19.2 runtime and supports normal imports from `"react"`, `"react-dom"`, and `"react-dom/client"`.
+Zap serves an embedded React 19.2 runtime and supports normal imports from `"react"`, `"react-dom"`, and `"react-dom/client"`.
 
 You can write components with standard React imports:
 

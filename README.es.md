@@ -10,13 +10,32 @@ Está pensado para prototipos frontend, demos, herramientas internas, apps peque
 
 ## Estado
 
-Zap está enfocado actualmente en la experiencia de desarrollo `0.1`.
+Zap es actualmente un runtime de desarrollo pre-`1.0`. Su flujo principal ya es utilizable, pero sus convenciones públicas todavía pueden evolucionar mientras el proyecto encuentra la interfaz estable más pequeña que valga la pena mantener a largo plazo.
 
-- Runtime centrado en desarrollo
+- Runtime exclusivo para desarrollo
 - Runtime centrado en frontend; no ejecuta backend JavaScript
 - Routing estático basado en archivos
 - Estilos globales vía `public/styles/global.css`
 - Archivos que empiezan con `_` son módulos privados, no rutas públicas
+
+## Objetivos
+
+- Distribuirse como un ejecutable autónomo
+- Permitir desarrollo frontend con React, JSX y TypeScript
+- Comenzar desde una carpeta vacía sin configuración obligatoria
+- Ofrecer recarga automática y retroalimentación rápida durante el desarrollo
+- Mantener una experiencia simple, transparente y predecible
+
+## No objetivos
+
+- Sustituir Node.js como runtime de propósito general
+- Convertirse en un framework full-stack
+- Gestionar despliegues, hosting o infraestructura
+- Incorporar un backend de aplicaciones, base de datos o sistema de autenticación
+- Competir con toolchains completos de compilación y distribución para producción
+- Crear un ecosistema de paquetes que sustituya npm
+
+Las nuevas funcionalidades deben reducir la fricción del desarrollo frontend sin volver más difícil de entender el flujo básico de `zap`. Deben ser opcionales, caber dentro del ejecutable y producir proyectos cuyo comportamiento se pueda comprender leyendo sus archivos.
 
 ## Inicio Rápido
 
@@ -137,7 +156,7 @@ Por ejemplo, si existen `routes/about.tsx` y `routes/about.html`, `/about` usa `
 
 ## Imports de React
 
-Zap `0.1` sirve un runtime embebido de React 19.2 y soporta imports normales desde `"react"`, `"react-dom"` y `"react-dom/client"`.
+Zap sirve un runtime embebido de React 19.2 y soporta imports normales desde `"react"`, `"react-dom"` y `"react-dom/client"`.
 
 Puedes escribir componentes con imports estándar de React:
 
