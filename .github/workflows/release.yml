@@ -16,19 +16,24 @@ jobs:
           - goos: linux
             goarch: amd64
             suffix: linux-amd64
+            archive: tar.gz
           - goos: linux
             goarch: arm64
             suffix: linux-arm64
+            archive: tar.gz
           - goos: darwin
             goarch: amd64
             suffix: macos-intel
+            archive: tar.gz
           - goos: darwin
             goarch: arm64
             suffix: macos-apple-silicon
+            archive: tar.gz
           - goos: windows
             goarch: amd64
             suffix: windows-amd64
             ext: .exe
+            archive: zip
 
     steps:
       - uses: actions/checkout@v4
@@ -43,14 +48,23 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
         run: |
+          mkdir -p dist
           go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
-            -o zap-${{ matrix.suffix }}${{ matrix.ext || '' }} .
+            -o dist/zap${{ matrix.ext || '' }} .
+
+      - name: Package Unix executable
+        if: matrix.goos != 'windows'
+        run: tar -C dist -czf zap-${{ matrix.suffix }}.tar.gz zap
+
+      - name: Package Windows executable
+        if: matrix.goos == 'windows'
+        run: cd dist && zip ../zap-${{ matrix.suffix }}.zip zap.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: zap-${{ matrix.suffix }}
-          path: zap-${{ matrix.suffix }}${{ matrix.ext || '' }}
+          path: zap-${{ matrix.suffix }}.${{ matrix.archive }}
 
   release:
     name: Create GitHub Release
@@ -69,5 +83,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          files: zap-*
+          files: |
+            zap-*.tar.gz
+            zap-*.zip
           generate_release_notes: true

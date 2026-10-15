@@ -1,8 +1,10 @@
 # Changelog
 
-Notable changes to Zap are documented in this file. The current `Unreleased` section contains only changes verified in Git after `v0.1.4`.
+Notable changes to Zap are documented in this file.
 
 ## Unreleased
+
+## 0.2.0 - 2026-10-15
 
 ### Added
 
@@ -18,6 +20,7 @@ Notable changes to Zap are documented in this file. The current `Unreleased` sec
 - Reuse incremental esbuild contexts and release contexts for deleted routes.
 - Serve embedded React assets locally and keep development responses uncached.
 - Allow intentional public runtime configuration files such as `public/config.json` while continuing to block common secret and private-key formats.
+- Package release downloads so the extracted executable is named `zap` (`zap.exe` on Windows).
 
 ### Fixed
 

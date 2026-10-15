@@ -63,7 +63,7 @@ That is enough to get a site running. If `routes/` does not exist, Zap creates t
 
 ## Installation
 
-Download the binary for your platform from [Releases](https://github.com/melendezgg/zap/releases) or build from source:
+Download the archive for your platform from [Releases](https://github.com/melendezgg/zap/releases) and extract the `zap` executable (`zap.exe` on Windows), or build from source:
 
 ```bash
 go install github.com/melendezgg/zap@latest
