@@ -107,12 +107,15 @@ Version: %s
 USAGE:
   zap                        Start the development server
   zap --port 3000            Use a custom port
+  zap -P 3000                Short port form
   zap --host 0.0.0.0         Use a custom host
   zap --help                 Show this help
+  zap -h                     Short help form
   zap --version              Show version
+  zap -v                     Short version form
 
 NOTE:
-  0.1 is focused on development.
+  Zap is a development-only runtime.
   There is no production mode or build command yet.
 
 QUICK START:
@@ -129,11 +132,12 @@ FEATURES:
   - Static HTML/JS support
   - Per-page title (export const title)
   - Global CSS via /public/styles/global.css
-  - Private files with _ prefix
+  - Private files and directories with _ prefix
 
 STRUCTURE:
   /routes/*.tsx,jsx,html,js  -> Public routes
   /routes/_*                 -> Private modules, not public routes
+  /routes/**/_*/             -> Private directories, not public routes
   /public/styles/global.css  -> Automatic global styles
   /public/                   -> Static assets (optional)
 `, version)

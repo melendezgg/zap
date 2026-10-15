@@ -49,7 +49,7 @@ zap
 # Open http://localhost:8080
 ```
 
-That is enough to get a site running. If `routes/` does not exist yet, Zap creates starter routes plus `public/styles/global.css`, then immediately starts the dev server.
+That is enough to get a site running. If `routes/` does not exist, Zap creates the missing starter files in `routes/` plus `public/styles/global.css`, without overwriting files that already exist. If `routes/` already exists, automatic initialization is skipped. The `public/` directory is optional when no static assets or global stylesheet are needed.
 
 ## Installation
 
@@ -71,7 +71,7 @@ go install github.com/melendezgg/zap@latest
 - **Source maps** - Inline development source maps for browser stack traces
 - **Multi-format routes** - `.tsx`, `.jsx`, `.html`, `.js`
 - **Dynamic titles** - `export const title = "Page Title"`
-- **Private route files** - `_Component.tsx`, `_utils.jsx`, `_helpers.js` are not routed
+- **Private route modules** - Files and directories prefixed with `_` are not routed
 - **Global CSS** - `public/styles/global.css` is loaded automatically
 - **Bundle cache** - JSX/TSX bundles are cached in memory during development
 
@@ -83,7 +83,9 @@ my-app/
 │   ├── index.tsx          -> Home page (/)
 │   ├── about.tsx          -> About page (/about)
 │   ├── contact.html       -> Static HTML (/contact)
-│   └── _Card.tsx          -> Private reusable module
+│   ├── _Card.tsx          -> Private reusable module
+│   └── _components/       -> Private reusable modules
+│       └── Button.tsx
 └── public/
     └── styles/
         └── global.css     -> Global styles
@@ -94,8 +96,12 @@ my-app/
 ```bash
 zap                        # Start the dev server
 zap --port 3000            # Custom port
+zap -P 3000                # Short port form
 zap --host 0.0.0.0         # Preview on another device with the printed QR code
 zap --help                 # Show help
+zap -h                     # Short help form
+zap --version              # Show version
+zap -v                     # Short version form
 ```
 
 ## Example: `routes/index.tsx`
@@ -126,13 +132,13 @@ Zap is intentionally a frontend runtime. It does not execute backend JavaScript,
 
 Zap only handles a small set of controlled package imports today: `"react"`, `"react-dom"`, and `"react-dom/client"`. Those imports are mapped to the embedded React runtime that Zap serves locally, so code can follow normal React patterns without requiring `node_modules` or a network connection.
 
-## Private Files
+## Private Modules
 
-Files inside `routes/` that start with `_` are excluded from public routing, but can still be imported normally.
+Any file or directory inside `routes/` whose name starts with `_` is excluded from public routing. Its modules can still be imported normally from public pages.
 
 ```tsx
 import Button from "./_Button";
-import Card from "./_Card";
+import Card from "./_components/Card";
 
 export default function App() {
   return (
@@ -144,12 +150,27 @@ export default function App() {
 }
 ```
 
-## Route Conflicts
+## Routing Conventions
 
-If multiple files map to the same route, Zap keeps the route deterministic and prints a warning. The current priority is:
+| File | URL |
+| --- | --- |
+| `routes/index.tsx` | `/` |
+| `routes/about.tsx` | `/about` |
+| `routes/about.jsx` | `/about` |
+| `routes/about.html` | `/about` |
+| `routes/blog/index.tsx` | `/blog` |
+| `routes/blog/post.tsx` | `/blog/post` |
+| `routes/scripts/app.js` | `/scripts/app.js` |
+| `routes/scripts/index.js` | `/scripts/index.js` |
+
+TSX, JSX, and HTML files are page routes: their extension is removed, and `index` maps to its containing directory. JavaScript files are served as JavaScript resources and keep `.js` in the URL; `index.js` is therefore not a directory index.
+
+### Route Conflicts
+
+If multiple page files map to the same URL, Zap keeps the route deterministic and prints a warning. The page priority is:
 
 ```text
-.tsx > .jsx > .html > .js
+.tsx > .jsx > .html
 ```
 
 For example, if both `routes/about.tsx` and `routes/about.html` exist, `/about` uses `routes/about.tsx` and Zap reports that `routes/about.html` was ignored.

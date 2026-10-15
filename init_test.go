@@ -39,7 +39,8 @@ func TestCreateStarterProjectCreatesStarterRoutes(t *testing.T) {
 
 func TestCreateStarterProjectDoesNotOverwriteExistingFiles(t *testing.T) {
 	withTempProject(t, map[string]string{
-		"routes/index.tsx": "custom",
+		"routes/index.tsx":         "custom route",
+		"public/styles/global.css": "custom styles",
 	})
 
 	if err := createStarterProject(); err != nil {
@@ -50,7 +51,31 @@ func TestCreateStarterProjectDoesNotOverwriteExistingFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read index: %v", err)
 	}
-	if string(content) != "custom" {
+	if string(content) != "custom route" {
 		t.Fatalf("expected existing route to remain unchanged, got %q", content)
+	}
+
+	styles, err := os.ReadFile(filepath.Join(publicDir, "styles", "global.css"))
+	if err != nil {
+		t.Fatalf("read global styles: %v", err)
+	}
+	if string(styles) != "custom styles" {
+		t.Fatalf("expected existing global styles to remain unchanged, got %q", styles)
+	}
+}
+
+func TestMagicInitSkipsProjectsWithRoutesDirectory(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/custom.tsx": `export default function Custom() { return null; }`,
+	})
+
+	if initialized := magicInit(); initialized {
+		t.Fatal("expected automatic initialization to be skipped")
+	}
+	if _, err := os.Stat(filepath.Join(routesDir, "about.tsx")); !os.IsNotExist(err) {
+		t.Fatalf("expected starter routes not to be created, got err=%v", err)
+	}
+	if _, err := os.Stat(publicDir); !os.IsNotExist(err) {
+		t.Fatalf("expected optional public directory not to be created, got err=%v", err)
 	}
 }

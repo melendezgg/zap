@@ -49,7 +49,7 @@ zap
 # Abrir http://localhost:8080
 ```
 
-Con eso ya tienes un sitio inicial funcionando. Si `routes/` todavía no existe, Zap crea las rutas iniciales junto con `public/styles/global.css` e inicia el servidor de desarrollo de inmediato.
+Con eso ya tienes un sitio inicial funcionando. Si `routes/` no existe, Zap crea los archivos iniciales faltantes en `routes/` junto con `public/styles/global.css`, sin sobrescribir archivos existentes. Si `routes/` ya existe, omite la inicialización automática. El directorio `public/` es opcional cuando no se necesitan recursos estáticos ni una hoja de estilos global.
 
 ## Instalación
 
@@ -71,7 +71,7 @@ go install github.com/melendezgg/zap@latest
 - **Source maps** - Source maps inline para stacks del navegador durante desarrollo
 - **Rutas multi-formato** - `.tsx`, `.jsx`, `.html`, `.js`
 - **Títulos dinámicos** - `export const title = "Título"`
-- **Archivos privados** - `_Componente.tsx`, `_utils.jsx`, `_helpers.js` no son rutas
+- **Módulos privados** - Los archivos y directorios con prefijo `_` no son rutas
 - **CSS global** - `public/styles/global.css` se carga automáticamente
 - **Cache de bundles** - Las páginas JSX/TSX se cachean en memoria durante desarrollo
 
@@ -83,7 +83,9 @@ mi-app/
 │   ├── index.tsx          -> Home page (/)
 │   ├── about.tsx          -> About page (/about)
 │   ├── contact.html       -> HTML estático (/contact)
-│   └── _Card.tsx          -> Módulo privado reutilizable
+│   ├── _Card.tsx          -> Módulo privado reutilizable
+│   └── _components/       -> Módulos privados reutilizables
+│       └── Button.tsx
 └── public/
     └── styles/
         └── global.css     -> Estilos globales
@@ -94,8 +96,12 @@ mi-app/
 ```bash
 zap                        # Iniciar servidor de desarrollo
 zap --port 3000            # Puerto personalizado
+zap -P 3000                # Forma corta del puerto
 zap --host 0.0.0.0         # Probar en otro dispositivo con el QR mostrado
 zap --help                 # Mostrar ayuda
+zap -h                     # Forma corta de ayuda
+zap --version              # Mostrar versión
+zap -v                     # Forma corta de versión
 ```
 
 ## Ejemplo: `routes/index.tsx`
@@ -126,13 +132,13 @@ Zap es intencionalmente un runtime de frontend. No ejecuta backend JavaScript, n
 
 Zap solo maneja un conjunto pequeño de imports de paquetes controlados por ahora: `"react"`, `"react-dom"` y `"react-dom/client"`. Esos imports se mapean al runtime embebido de React que Zap sirve localmente, así que el código puede seguir patrones normales de React sin requerir `node_modules` ni conexión de red.
 
-## Archivos Privados
+## Módulos Privados
 
-Los archivos dentro de `routes/` que empiezan con `_` quedan fuera del routing público, pero se pueden importar normalmente.
+Cualquier archivo o directorio dentro de `routes/` cuyo nombre empiece con `_` queda fuera del routing público. Sus módulos todavía se pueden importar normalmente desde páginas públicas.
 
 ```tsx
 import Button from "./_Button";
-import Card from "./_Card";
+import Card from "./_components/Card";
 
 export default function App() {
   return (
@@ -144,12 +150,27 @@ export default function App() {
 }
 ```
 
-## Conflictos de Rutas
+## Convenciones de Enrutamiento
 
-Si varios archivos producen la misma ruta, Zap mantiene el resultado determinístico y muestra una advertencia. La prioridad actual es:
+| Archivo | URL |
+| --- | --- |
+| `routes/index.tsx` | `/` |
+| `routes/about.tsx` | `/about` |
+| `routes/about.jsx` | `/about` |
+| `routes/about.html` | `/about` |
+| `routes/blog/index.tsx` | `/blog` |
+| `routes/blog/post.tsx` | `/blog/post` |
+| `routes/scripts/app.js` | `/scripts/app.js` |
+| `routes/scripts/index.js` | `/scripts/index.js` |
+
+Los archivos TSX, JSX y HTML son rutas de página: se elimina su extensión y `index` representa al directorio que lo contiene. Los archivos JavaScript se sirven como recursos JavaScript y conservan `.js` en la URL; por eso `index.js` no funciona como índice de directorio.
+
+### Conflictos de Rutas
+
+Si varios archivos de página producen la misma URL, Zap mantiene el resultado determinístico y muestra una advertencia. La prioridad de páginas es:
 
 ```text
-.tsx > .jsx > .html > .js
+.tsx > .jsx > .html
 ```
 
 Por ejemplo, si existen `routes/about.tsx` y `routes/about.html`, `/about` usa `routes/about.tsx` y Zap reporta que `routes/about.html` fue ignorado.

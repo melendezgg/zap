@@ -111,13 +111,31 @@ func TestReloadProjectKeepsNewPrivateDirectoriesOutOfRouteStore(t *testing.T) {
 	}
 }
 
-func TestRoutePathForFileKeepsJSFileExtension(t *testing.T) {
-	route, ok := routePathForFile("routes", filepath.Join("routes", "script.js"))
-	if !ok {
-		t.Fatal("expected route path")
+func TestRoutePathForFileDocumentsSupportedConventions(t *testing.T) {
+	tests := []struct {
+		file string
+		want string
+	}{
+		{"index.tsx", "/"},
+		{"about.tsx", "/about"},
+		{"about.jsx", "/about"},
+		{"about.html", "/about"},
+		{filepath.Join("blog", "index.tsx"), "/blog"},
+		{filepath.Join("blog", "post.tsx"), "/blog/post"},
+		{filepath.Join("scripts", "app.js"), "/scripts/app.js"},
+		{filepath.Join("scripts", "index.js"), "/scripts/index.js"},
 	}
-	if route != "/script.js" {
-		t.Fatalf("expected /script.js, got %s", route)
+
+	for _, test := range tests {
+		t.Run(test.file, func(t *testing.T) {
+			route, ok := routePathForFile(routesDir, filepath.Join(routesDir, test.file))
+			if !ok {
+				t.Fatal("expected route path")
+			}
+			if route != test.want {
+				t.Fatalf("expected %s, got %s", test.want, route)
+			}
+		})
 	}
 }
 

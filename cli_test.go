@@ -42,6 +42,30 @@ func TestParseArgsAcceptsHostAndPort(t *testing.T) {
 	}
 }
 
+func TestParseArgsAcceptsShortPort(t *testing.T) {
+	resetConfig()
+
+	action, err := parseArgs([]string{"-P", "3000"})
+	if err != nil {
+		t.Fatalf("parseArgs returned error: %v", err)
+	}
+	if action != cliActionServe || config.Port != "3000" {
+		t.Fatalf("unexpected result: action=%v port=%q", action, config.Port)
+	}
+}
+
+func TestParseArgsAcceptsLoopbackHost(t *testing.T) {
+	resetConfig()
+
+	action, err := parseArgs([]string{"--host", "127.0.0.1"})
+	if err != nil {
+		t.Fatalf("parseArgs returned error: %v", err)
+	}
+	if action != cliActionServe || config.Host != "127.0.0.1" {
+		t.Fatalf("unexpected result: action=%v host=%q", action, config.Host)
+	}
+}
+
 func TestParseArgsRejectsInvalidPort(t *testing.T) {
 	resetConfig()
 
@@ -55,22 +79,27 @@ func TestParseArgsRejectsInvalidPort(t *testing.T) {
 }
 
 func TestParseArgsReturnsHelpAndVersionActions(t *testing.T) {
-	resetConfig()
+	tests := []struct {
+		flag string
+		want cliAction
+	}{
+		{"--help", cliActionHelp},
+		{"-h", cliActionHelp},
+		{"--version", cliActionVersion},
+		{"-v", cliActionVersion},
+	}
 
-	action, err := parseArgs([]string{"--help"})
-	if err != nil {
-		t.Fatalf("parseArgs help returned error: %v", err)
-	}
-	if action != cliActionHelp {
-		t.Fatalf("expected help action, got %v", action)
-	}
-
-	action, err = parseArgs([]string{"-v"})
-	if err != nil {
-		t.Fatalf("parseArgs version returned error: %v", err)
-	}
-	if action != cliActionVersion {
-		t.Fatalf("expected version action, got %v", action)
+	for _, test := range tests {
+		t.Run(test.flag, func(t *testing.T) {
+			resetConfig()
+			action, err := parseArgs([]string{test.flag})
+			if err != nil {
+				t.Fatalf("parseArgs returned error: %v", err)
+			}
+			if action != test.want {
+				t.Fatalf("expected action %v, got %v", test.want, action)
+			}
+		})
 	}
 }
 
