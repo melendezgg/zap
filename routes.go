@@ -88,7 +88,13 @@ func collectRouteFiles(root string) []string {
 	var files []string
 
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			if path != root && strings.HasPrefix(info.Name(), "_") {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 

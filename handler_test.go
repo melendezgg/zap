@@ -129,6 +129,25 @@ func TestHandlerDoesNotServePublicDirectories(t *testing.T) {
 	}
 }
 
+func TestHandlerDoesNotServePrivateRouteDirectories(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx":                 `export default function App() { return <main>Home</main>; }`,
+		"routes/_components/Card.tsx":      `export default function Card() { return null; }`,
+		"routes/blog/_components/Card.tsx": `export default function Card() { return null; }`,
+	})
+	routeStore.SetAll(scanAllRoutes())
+
+	for _, path := range []string{"/_components/Card", "/blog/_components/Card"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		handler(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("expected private route %s to return 404, got %d", path, rec.Code)
+		}
+	}
+}
+
 func TestResolvePublicPathRejectsTraversal(t *testing.T) {
 	dir := t.TempDir()
 	previousDir, err := os.Getwd()

@@ -16,7 +16,11 @@ import (
 
 func TestHotUpdateFlowFromFileChangeToRebuiltBundle(t *testing.T) {
 	withTempProject(t, map[string]string{
-		"routes/index.tsx": `export default function App() { return <main>Before</main>; }`,
+		"routes/index.tsx": `
+import Card from "./_components/Card";
+export default function App() { return <main><Card /></main>; }
+`,
+		"routes/_components/Card.tsx": `export default function Card() { return <p>Before</p>; }`,
 	})
 	bundleCache.Clear()
 	bundleBuilds.dispose()
@@ -39,6 +43,9 @@ func TestHotUpdateFlowFromFileChangeToRebuiltBundle(t *testing.T) {
 	defer eventsResponse.Body.Close()
 	if eventsResponse.StatusCode != http.StatusOK {
 		t.Fatalf("expected SSE connection, got %d", eventsResponse.StatusCode)
+	}
+	if status := requestStatus(t, server.Client(), server.URL+"/_components/Card"); status != http.StatusNotFound {
+		t.Fatalf("expected private component route to return 404, got %d", status)
 	}
 
 	eventReader := bufio.NewReader(eventsResponse.Body)
@@ -63,9 +70,9 @@ func TestHotUpdateFlowFromFileChangeToRebuiltBundle(t *testing.T) {
 		watcher.Close()
 	}()
 
-	updatedSource := `export default function App() { return <main>After</main>; }`
-	if err := os.WriteFile(filepath.Join("routes", "index.tsx"), []byte(updatedSource), 0644); err != nil {
-		t.Fatalf("update route: %v", err)
+	updatedSource := `export default function Card() { return <p>After</p>; }`
+	if err := os.WriteFile(filepath.Join("routes", "_components", "Card.tsx"), []byte(updatedSource), 0644); err != nil {
+		t.Fatalf("update private component: %v", err)
 	}
 
 	if event, err := readSSEEvent(eventReader); err != nil || event != "reload" {
@@ -85,7 +92,25 @@ func TestHotUpdateFlowFromFileChangeToRebuiltBundle(t *testing.T) {
 		t.Fatalf("decode update: %v", err)
 	}
 	if !strings.Contains(update.Code, "After") {
-		t.Fatalf("expected updated source in bundle")
+		t.Fatalf("expected updated private component in bundle")
+	}
+
+	writeTestFile(t, filepath.Join(routesDir, "about.tsx"), `export default function About() { return <main>About</main>; }`)
+	if event, err := readSSEEvent(eventReader); err != nil || event != "reload" {
+		t.Fatalf("expected reload event after adding route, got event=%q err=%v", event, err)
+	}
+	if status := requestStatus(t, server.Client(), server.URL+"/about"); status != http.StatusOK {
+		t.Fatalf("expected added route to return 200, got %d", status)
+	}
+
+	if err := os.Remove(filepath.Join(routesDir, "about.tsx")); err != nil {
+		t.Fatalf("remove route: %v", err)
+	}
+	if event, err := readSSEEvent(eventReader); err != nil || event != "reload" {
+		t.Fatalf("expected reload event after removing route, got event=%q err=%v", event, err)
+	}
+	if status := requestStatus(t, server.Client(), server.URL+"/about"); status != http.StatusNotFound {
+		t.Fatalf("expected removed route to return 404, got %d", status)
 	}
 
 	close(stop)
@@ -93,6 +118,16 @@ func TestHotUpdateFlowFromFileChangeToRebuiltBundle(t *testing.T) {
 	if err := <-watcherDone; err != nil {
 		t.Fatalf("stop project watcher: %v", err)
 	}
+}
+
+func requestStatus(t *testing.T, client *http.Client, url string) int {
+	t.Helper()
+	response, err := client.Get(url)
+	if err != nil {
+		t.Fatalf("GET %s: %v", url, err)
+	}
+	defer response.Body.Close()
+	return response.StatusCode
 }
 
 func readSSEEvent(reader *bufio.Reader) (string, error) {

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -49,6 +50,64 @@ func TestScanAllRoutesUsesExplicitConflictPriority(t *testing.T) {
 	}
 	if route.Title != "TSX About" {
 		t.Fatalf("expected title from winning route, got %q", route.Title)
+	}
+}
+
+func TestScanAllRoutesExcludesPrivateDirectories(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx":                     `export default function App() { return <main>Home</main>; }`,
+		"routes/_components/Card.tsx":          `export default function Card() { return <p>Private</p>; }`,
+		"routes/_utils/helper.tsx":             `export default function Helper() { return null; }`,
+		"routes/blog/index.tsx":                `export default function Blog() { return <main>Blog</main>; }`,
+		"routes/blog/post.tsx":                 `export default function Post() { return <main>Post</main>; }`,
+		"routes/blog/_components/PostCard.tsx": `export default function PostCard() { return null; }`,
+	})
+
+	routes := scanAllRoutes()
+	for _, route := range []string{"/", "/blog", "/blog/post"} {
+		if _, ok := routes[route]; !ok {
+			t.Fatalf("expected public route %s in %#v", route, routes)
+		}
+	}
+	for _, route := range []string{"/_components/Card", "/_utils/helper", "/blog/_components/PostCard"} {
+		if _, ok := routes[route]; ok {
+			t.Fatalf("did not expect private route %s in %#v", route, routes)
+		}
+	}
+}
+
+func TestBundleJSXImportsFromPrivateRouteDirectory(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx": `
+import Card from "./_components/Card";
+export default function App() { return <main><Card /></main>; }
+`,
+		"routes/_components/Card.tsx": `export default function Card() { return <p>Private Card</p>; }`,
+	})
+	bundleCache.Clear()
+	bundleBuilds.dispose()
+	t.Cleanup(bundleBuilds.dispose)
+
+	bundle, err := bundleJSX(filepath.Join(routesDir, "index.tsx"), true)
+	if err != nil {
+		t.Fatalf("bundle public route with private import: %v", err)
+	}
+	if !strings.Contains(bundle, "Private Card") {
+		t.Fatalf("expected private component in bundle")
+	}
+}
+
+func TestReloadProjectKeepsNewPrivateDirectoriesOutOfRouteStore(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx": `export default function App() { return <main>Home</main>; }`,
+	})
+	routeStore.SetAll(scanAllRoutes())
+	writeTestFile(t, filepath.Join(routesDir, "_components", "Card.tsx"), `export default function Card() { return null; }`)
+
+	reloadProject()
+
+	if _, ok := routeStore.Get("/_components/Card"); ok {
+		t.Fatal("did not expect a private route after project reload")
 	}
 }
 
