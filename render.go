@@ -6,7 +6,7 @@ import (
 	"html"
 )
 
-// === GENERAR HTML ===
+// === GENERATE HTML ===
 func generateHTML(jsCode string, css string, title string) string {
 	styleTag := ""
 	if css != "" {
@@ -14,7 +14,7 @@ func generateHTML(jsCode string, css string, title string) string {
 	}
 
 	return injectDevReloadScript(fmt.Sprintf(`<!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,7 +34,7 @@ func renderDevErrorHTML(routePath string, err error) string {
 	errorMessage := browserErrorMessage(err)
 
 	return injectDevReloadScript(fmt.Sprintf(`<!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

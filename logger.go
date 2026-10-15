@@ -11,7 +11,7 @@ import (
 
 var devLogger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 
-// === LOG DE REQUESTS ===
+// === REQUEST LOGGING ===
 func logRequest(method, path string, status int, start time.Time) {
 	if shouldSkipRequestLog(path, status) {
 		return

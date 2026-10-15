@@ -35,7 +35,7 @@ var sensitivePublicExactFiles = map[string]bool{
 	"secrets.yml":  true,
 }
 
-// === CARGAR CSS ===
+// === LOAD CSS ===
 func loadGlobalCSS() string {
 	globalCSSPath := filepath.Join(publicDir, "styles", "global.css")
 	content, err := os.ReadFile(globalCSSPath)
