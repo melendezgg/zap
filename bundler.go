@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -39,20 +41,42 @@ func (s *bundleBuildStore) get(key string) *bundleBuild {
 	return entry
 }
 
-func (s *bundleBuildStore) dispose() {
+func (s *bundleBuildStore) acquire(key string) *bundleBuild {
 	s.mu.Lock()
-	entries := s.entries
-	s.entries = make(map[string]*bundleBuild)
+	entry := s.entries[key]
+	if entry == nil {
+		entry = &bundleBuild{}
+		s.entries[key] = entry
+	}
+	entry.mu.Lock()
+	s.mu.Unlock()
+	return entry
+}
+
+func (s *bundleBuildStore) prune(activeKeys map[string]struct{}) {
+	s.mu.Lock()
+	var stale []*bundleBuild
+	for key, entry := range s.entries {
+		if _, active := activeKeys[key]; active {
+			continue
+		}
+		entry.mu.Lock()
+		delete(s.entries, key)
+		stale = append(stale, entry)
+	}
 	s.mu.Unlock()
 
-	for _, entry := range entries {
-		entry.mu.Lock()
+	for _, entry := range stale {
 		if entry.context != nil {
 			entry.context.Dispose()
 			entry.context = nil
 		}
 		entry.mu.Unlock()
 	}
+}
+
+func (s *bundleBuildStore) dispose() {
+	s.prune(map[string]struct{}{})
 }
 
 var bundleBuilds = newBundleBuildStore()
@@ -68,15 +92,14 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 		return "", fmt.Errorf("path error: %v", err)
 	}
 
-	cacheKey := fmt.Sprintf("%s|%t", absPath, isTS)
+	cacheKey := bundleBuildKey(absPath, isTS)
 	if cachedBundle, ok := bundleCache.Get(cacheKey); ok {
 		return cachedBundle, nil
 	}
 
 	// Serialize cache misses for the same route. Without this, simultaneous
 	// first requests can start duplicate esbuild jobs.
-	build := bundleBuilds.get(cacheKey)
-	build.mu.Lock()
+	build := bundleBuilds.acquire(cacheKey)
 	defer build.mu.Unlock()
 
 	if cachedBundle, ok := bundleCache.Get(cacheKey); ok {
@@ -151,6 +174,25 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 	return "", fmt.Errorf("no output")
 }
 
+func bundleBuildKey(absPath string, isTS bool) string {
+	return fmt.Sprintf("%s|%t", absPath, isTS)
+}
+
+func activeBundleBuildKeys(routes map[string]*RouteInfo) map[string]struct{} {
+	keys := make(map[string]struct{})
+	for _, info := range routes {
+		if info.Type != "page" {
+			continue
+		}
+		absPath, err := filepath.Abs(info.File)
+		if err != nil {
+			continue
+		}
+		keys[bundleBuildKey(absPath, info.IsTS)] = struct{}{}
+	}
+	return keys
+}
+
 type compileError struct {
 	Phase    string
 	Messages []api.Message
@@ -168,6 +210,7 @@ func (e *compileError) browserMessage() string {
 	messages := make([]api.Message, len(e.Messages))
 	copy(messages, e.Messages)
 	for i := range messages {
+		messages[i].Text = sanitizeDiagnosticText(messages[i].Text)
 		if messages[i].Location == nil {
 			continue
 		}
@@ -179,7 +222,13 @@ func (e *compileError) browserMessage() string {
 }
 
 func safeDisplayPath(path string) string {
-	if path == "" || !filepath.IsAbs(path) {
+	if path == "" {
+		return ""
+	}
+	if !filepath.IsAbs(path) {
+		if pathEscapesRoot(filepath.FromSlash(path)) {
+			return filepath.Base(filepath.FromSlash(path))
+		}
 		return filepath.ToSlash(path)
 	}
 
@@ -190,6 +239,30 @@ func safeDisplayPath(path string) string {
 		}
 	}
 	return filepath.Base(path)
+}
+
+var quotedAbsolutePathPattern = regexp.MustCompile("([\"'])(/[^\\r\\n\"']+|[A-Za-z]:[\\\\/][^\\r\\n\"']+)([\"'])")
+var unquotedAbsolutePathPattern = regexp.MustCompile("(^|[\\s(])(/[^\\s\"'<>:,;)}\\]]+|[A-Za-z]:[\\\\/][^\\s\"'<>:,;)}\\]]+)")
+
+func sanitizeDiagnosticText(text string) string {
+	text = quotedAbsolutePathPattern.ReplaceAllStringFunc(text, func(match string) string {
+		quote := match[:1]
+		return quote + diagnosticPathBase(match[1:len(match)-1]) + quote
+	})
+	return unquotedAbsolutePathPattern.ReplaceAllStringFunc(text, func(match string) string {
+		prefix := ""
+		candidate := match
+		if strings.ContainsRune(" \t\n\r(", rune(match[0])) {
+			prefix = match[:1]
+			candidate = match[1:]
+		}
+		return prefix + diagnosticPathBase(candidate)
+	})
+}
+
+func diagnosticPathBase(value string) string {
+	normalized := strings.ReplaceAll(value, "\\", "/")
+	return path.Base(normalized)
 }
 
 func formatBuildMessages(messages []api.Message) string {

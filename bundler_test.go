@@ -256,3 +256,44 @@ func TestFormatBuildMessageIncludesLocationAndSourceLine(t *testing.T) {
 		t.Fatalf("expected source marker in %q", message)
 	}
 }
+
+func TestCompileErrorBrowserMessageRedactsEmbeddedAbsolutePaths(t *testing.T) {
+	secretPath := filepath.Join(t.TempDir(), "private", "secret.tsx")
+	buildErr := newCompileError("build", []api.Message{{
+		Text: fmt.Sprintf(`Could not read from %q or %s`, secretPath, secretPath),
+		Location: &api.Location{
+			File:     secretPath,
+			Line:     1,
+			Column:   0,
+			LineText: `const broken = ;`,
+		},
+	}})
+
+	message := buildErr.browserMessage()
+	if strings.Contains(message, filepath.Dir(secretPath)) {
+		t.Fatalf("expected absolute directory to be redacted: %s", message)
+	}
+	if !strings.Contains(message, "secret.tsx") {
+		t.Fatalf("expected file basename to remain useful: %s", message)
+	}
+}
+
+func TestSafeDisplayPathHidesRelativeTraversal(t *testing.T) {
+	if got := safeDisplayPath("../../private/secret.tsx"); got != "secret.tsx" {
+		t.Fatalf("expected basename, got %q", got)
+	}
+}
+
+func TestBundleBuildStorePrunesInactiveEntries(t *testing.T) {
+	store := newBundleBuildStore()
+	active := store.get("active")
+	store.get("stale")
+
+	store.prune(map[string]struct{}{"active": {}})
+
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if len(store.entries) != 1 || store.entries["active"] != active {
+		t.Fatalf("expected only active context to remain: %#v", store.entries)
+	}
+}

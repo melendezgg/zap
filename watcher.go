@@ -193,7 +193,9 @@ func runProjectWatcher(watcher *fsnotify.Watcher, stop <-chan struct{}, onChange
 func reloadProject() {
 	fmt.Println("Changes detected!")
 	bundleCache.Clear()
-	routeStore.SetAll(scanAllRoutes())
+	routes := scanAllRoutes()
+	routeStore.SetAll(routes)
+	bundleBuilds.prune(activeBundleBuildKeys(routes))
 	warnSensitivePublicFiles()
 	devReload.broadcast()
 }

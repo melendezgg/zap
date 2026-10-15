@@ -184,7 +184,7 @@ Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarroll
 
 Zap usa notificaciones nativas del sistema de archivos con un debounce corto (excepto `.git` y `node_modules`), limpia su cache de salida en memoria y vuelve a escanear las rutas. Las rutas JSX/TSX mantienen un contexto incremental de esbuild para reutilizar el grafo de dependencias en compilaciones posteriores. React Fast Refresh aplica las compilaciones exitosas en el sitio para conservar el estado local de los componentes. El polling se conserva como fallback cuando las notificaciones nativas no están disponibles.
 
-Los fallos de compilación se registran con contexto estructurado en la terminal. Durante una actualización, un overlay muestra diagnósticos seguros con rutas relativas al proyecto mientras la última app exitosa sigue visible debajo. Al corregir el código, el overlay desaparece automáticamente. Los detalles internos inesperados permanecen solo en la terminal.
+Los fallos de compilación se registran con contexto estructurado en la terminal. Durante una actualización, un overlay muestra diagnósticos del compilador con rutas relativas al proyecto y rutas internas incrustadas redactadas mientras la última app exitosa sigue visible debajo. Al corregir el código, el overlay desaparece automáticamente. Los errores inesperados ajenos al compilador permanecen solo en la terminal.
 
 Para probar desde un móvil, inicia Zap con `--host 0.0.0.0`. Zap muestra las URLs IPv4 alcanzables y un código QR para la primera. Los dispositivos deben estar en la misma red y conviene exponer el servidor de desarrollo únicamente en redes de confianza.
 

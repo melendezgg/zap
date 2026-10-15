@@ -184,7 +184,7 @@ Zap uses [esbuild](https://esbuild.github.io/) to bundle JSX/TSX for development
 
 Zap uses native filesystem notifications with a short debounce (excluding `.git` and `node_modules`), clears its in-memory output cache on changes, and rebuilds the route map. JSX/TSX routes keep an incremental esbuild context so subsequent rebuilds can reuse the parsed dependency graph. React Fast Refresh then applies successful updates in place so local component state survives. A polling watcher is retained as a fallback when native notifications are unavailable.
 
-Compilation failures are logged with structured context in the terminal. During hot updates, a browser overlay reports safe, project-relative diagnostics while the last successful app remains interactive underneath. Fixing the source dismisses the overlay automatically. Unexpected internal details stay in the terminal for local debugging.
+Compilation failures are logged with structured context in the terminal. During hot updates, a browser overlay reports compiler diagnostics with project-relative paths and redacted embedded filesystem paths while the last successful app remains interactive underneath. Fixing the source dismisses the overlay automatically. Unexpected non-compiler errors stay in the terminal for local debugging.
 
 For mobile preview, start Zap with `--host 0.0.0.0`. Zap prints reachable IPv4 network URLs and a QR code for the first one. Devices must be on the same network, and the development server should only be exposed on networks you trust.
 
