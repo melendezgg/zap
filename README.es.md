@@ -37,6 +37,16 @@ Zap es actualmente un runtime de desarrollo pre-`1.0`. Su flujo principal ya es 
 
 Las nuevas funcionalidades deben reducir la fricción del desarrollo frontend sin volver más difícil de entender el flujo básico de `zap`. Deben ser opcionales, caber dentro del ejecutable y producir proyectos cuyo comportamiento se pueda comprender leyendo sus archivos.
 
+## Compatibilidad
+
+- Durante `0.x`, el comportamiento documentado todavía puede evolucionar mientras Zap establece su interfaz estable más pequeña.
+- Una futura versión `1.0` convertirá la CLI, las convenciones de rutas, la estructura inicial y los imports de React documentados en un contrato estable de compatibilidad.
+- Después de `1.0`, los cambios incompatibles deberán identificarse expresamente y explicarse en las notas de versión.
+- Las correcciones de seguridad y de comportamientos defectuosos pueden cambiar un comportamiento incorrecto, pero su impacto visible deberá documentarse.
+- Los endpoints internos de desarrollo y las URLs de recursos embebidos bajo `/__zap/` son detalles de implementación, no garantías públicas de compatibilidad.
+
+Los cambios visibles y verificados se registran en [CHANGELOG.md](CHANGELOG.md).
+
 ## Inicio Rápido
 
 ```bash
