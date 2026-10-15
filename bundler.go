@@ -93,7 +93,11 @@ func bundleJSX(entryFile string, isTS bool) (string, error) {
 			entryPath = "./" + entryPath
 		}
 	}
-	virtualEntry := fmt.Sprintf("import App from %s; window.App = App;", strconv.Quote(entryPath))
+	virtualEntry := fmt.Sprintf(
+		"import App from %s; window.App = App; window.__zapRefreshID = %s;",
+		strconv.Quote(entryPath),
+		strconv.Quote("zap:"+filepath.ToSlash(absPath)),
+	)
 
 	options := api.BuildOptions{
 		Stdin: &api.StdinOptions{

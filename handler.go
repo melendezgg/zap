@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -24,6 +25,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		handleDevEvents(w, r)
+		return
+	}
+
+	if path == "/__zap/update" {
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET")
+			logRequest(r.Method, path, http.StatusMethodNotAllowed, start)
+			return
+		}
+		handleDevUpdate(w, r)
 		return
 	}
 
@@ -59,10 +70,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		path = strings.TrimSuffix(path, "/")
 	}
 
-	info, exists := routeStore.Get(path)
-	if !exists {
-		info, exists = routeStore.Get(path + "/index")
-	}
+	info, exists := findRoute(path)
 
 	if !exists {
 		staticPath, ok := resolvePublicPath(path)
@@ -137,6 +145,56 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	http.Error(w, "404 - Route not found", http.StatusNotFound)
 	logRequest(r.Method, path, http.StatusNotFound, start)
+}
+
+type devUpdateResponse struct {
+	Code  string `json:"code,omitempty"`
+	CSS   string `json:"css,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
+func findRoute(path string) (*RouteInfo, bool) {
+	if path != "/" && strings.HasSuffix(path, "/") {
+		path = strings.TrimSuffix(path, "/")
+	}
+	info, exists := routeStore.Get(path)
+	if !exists {
+		info, exists = routeStore.Get(path + "/index")
+	}
+	return info, exists
+}
+
+func handleDevUpdate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	info, exists := findRoute(r.URL.Query().Get("route"))
+	if !exists || info.Type != "page" {
+		writeJSONResponse(w, r, http.StatusNotFound, devUpdateResponse{Error: "React route not found"})
+		return
+	}
+
+	bundledCode, err := bundleJSX(info.File, info.IsTS)
+	if err != nil {
+		logCompileError(r.URL.Query().Get("route"), err)
+		writeJSONResponse(w, r, http.StatusInternalServerError, devUpdateResponse{Error: browserErrorMessage(err)})
+		return
+	}
+
+	css := loadGlobalCSS()
+	if info.CSSFile != "" {
+		if scopedCSS := loadCSS(info.CSSFile); scopedCSS != "" {
+			css += "\n" + scopedCSS
+		}
+	}
+	writeJSONResponse(w, r, http.StatusOK, devUpdateResponse{Code: bundledCode, CSS: css})
+}
+
+func writeJSONResponse(w http.ResponseWriter, r *http.Request, status int, value any) {
+	content, err := json.Marshal(value)
+	if err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+	writeResponse(w, r, status, content)
 }
 
 func isReadMethod(method string) bool {

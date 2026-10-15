@@ -45,7 +45,9 @@ go install github.com/melendezgg/zap@latest
 - **Zero configuration** - Single binary, no Node.js toolchain
 - **React 19.2** - Embedded in the binary for offline development
 - **React imports** - Supports `"react"`, `"react-dom"`, and `"react-dom/client"`
-- **Hot reload** - Detects file changes automatically
+- **Fast Refresh** - Updates React routes without losing component state
+- **Error overlay** - Keeps the last working app visible while compile errors are fixed
+- **Mobile preview** - `--host 0.0.0.0` prints network URLs and a scannable QR code
 - **TypeScript/JSX** - Native support via esbuild
 - **Source maps** - Inline development source maps for browser stack traces
 - **Multi-format routes** - `.tsx`, `.jsx`, `.html`, `.js`
@@ -73,6 +75,7 @@ my-app/
 ```bash
 zap                        # Start the dev server
 zap --port 3000            # Custom port
+zap --host 0.0.0.0         # Preview on another device with the printed QR code
 zap --help                 # Show help
 ```
 
@@ -179,9 +182,11 @@ body {
 
 Zap uses [esbuild](https://esbuild.github.io/) to bundle JSX/TSX for development. Routes are discovered from `routes/`, private files prefixed with `_` are excluded from the public router but can still be reused locally, React imports are mapped to embedded runtime globals, and `public/styles/global.css` is injected automatically when present.
 
-Zap uses native filesystem notifications with a short debounce (excluding `.git` and `node_modules`), clears its in-memory output cache on changes, and rebuilds the route map. JSX/TSX routes keep an incremental esbuild context so subsequent rebuilds can reuse the parsed dependency graph. A polling watcher is retained as a fallback when native notifications are unavailable.
+Zap uses native filesystem notifications with a short debounce (excluding `.git` and `node_modules`), clears its in-memory output cache on changes, and rebuilds the route map. JSX/TSX routes keep an incremental esbuild context so subsequent rebuilds can reuse the parsed dependency graph. React Fast Refresh then applies successful updates in place so local component state survives. A polling watcher is retained as a fallback when native notifications are unavailable.
 
-Compilation failures are logged with structured context in the terminal. Browser error pages use project-relative paths and hide unexpected internal errors, while the terminal retains the full diagnostic for local debugging.
+Compilation failures are logged with structured context in the terminal. During hot updates, a browser overlay reports safe, project-relative diagnostics while the last successful app remains interactive underneath. Fixing the source dismisses the overlay automatically. Unexpected internal details stay in the terminal for local debugging.
+
+For mobile preview, start Zap with `--host 0.0.0.0`. Zap prints reachable IPv4 network URLs and a QR code for the first one. Devices must be on the same network, and the development server should only be exposed on networks you trust.
 
 ## Examples
 

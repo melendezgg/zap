@@ -8,9 +8,18 @@ import (
 
 const reactVersion = "19.2.6"
 
+const reactRefreshVersion = "0.17.0"
+
 const mountAppScript = `if (typeof window.App !== 'undefined') {
-    const root = createRoot(document.getElementById('root'));
-    root.render(React.createElement(window.App));
+    if (!window.__zapRoot) {
+        window.__zapRoot = createRoot(document.getElementById('root'));
+        ZapRefreshRuntime.register(window.App, window.__zapRefreshID);
+        window.__zapRoot.render(React.createElement(window.App));
+    } else {
+        ZapRefreshRuntime.register(window.App, window.__zapRefreshID);
+        ZapRefreshRuntime.performReactRefresh();
+    }
+    window.__zapHotUpdate = true;
 }`
 
 //go:embed internal/assets/react/*.mjs
@@ -44,9 +53,16 @@ func handleVendorAsset(w http.ResponseWriter, r *http.Request) (bool, int) {
 }
 
 func reactRuntimeImportScript() string {
-	return `import React from "/__zap/assets/react/react.development.mjs";
-import * as ReactDOM from "/__zap/assets/react/react-dom.development.mjs";
-import { createRoot, hydrateRoot } from "/__zap/assets/react/react-dom-client.development.mjs";
+	return `import ZapRefreshRuntime from "/__zap/assets/react/react-refresh-runtime.development.mjs";
+
+if (!window.__zapRefreshReady) {
+  ZapRefreshRuntime.injectIntoGlobalHook(window);
+  window.__zapRefreshReady = true;
+}
+
+const { default: React } = await import("/__zap/assets/react/react.development.mjs");
+const ReactDOM = await import("/__zap/assets/react/react-dom.development.mjs");
+const { createRoot, hydrateRoot } = await import("/__zap/assets/react/react-dom-client.development.mjs");
 
 window.React = React;
 window.ReactDOM = { ...ReactDOM, createRoot, hydrateRoot };

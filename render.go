@@ -10,7 +10,7 @@ import (
 func generateHTML(jsCode string, css string, title string) string {
 	styleTag := ""
 	if css != "" {
-		styleTag = fmt.Sprintf("<style>%s</style>", css)
+		styleTag = fmt.Sprintf("<style id=\"__zap-styles\">%s</style>", css)
 	}
 
 	return injectDevReloadScript(fmt.Sprintf(`<!DOCTYPE html>
@@ -31,11 +31,7 @@ func generateHTML(jsCode string, css string, title string) string {
 }
 
 func renderDevErrorHTML(routePath string, err error) string {
-	errorMessage := "Compilation failed. See the Zap server log for details."
-	var buildErr *compileError
-	if errors.As(err, &buildErr) {
-		errorMessage = buildErr.browserMessage()
-	}
+	errorMessage := browserErrorMessage(err)
 
 	return injectDevReloadScript(fmt.Sprintf(`<!DOCTYPE html>
 <html lang="es">
@@ -84,4 +80,13 @@ func renderDevErrorHTML(routePath string, err error) string {
     </div>
 </body>
 </html>`, html.EscapeString(routePath), html.EscapeString(errorMessage)))
+}
+
+func browserErrorMessage(err error) string {
+	message := "Compilation failed. See the Zap server log for details."
+	var buildErr *compileError
+	if errors.As(err, &buildErr) {
+		message = buildErr.browserMessage()
+	}
+	return message
 }

@@ -39,9 +39,10 @@ func main() {
 	if !isLocalOnlyHost(config.Host) {
 		fmt.Println("Warning: network clients can access development bundles, source maps, and diagnostics.")
 	}
+	printNetworkAccess()
 	fmt.Printf("Routes: %d\n\n", routeStore.Len())
 	fmt.Println("Hot reload active")
-	fmt.Printf("React %s (embedded)\n", reactVersion)
+	fmt.Printf("React %s + Fast Refresh %s (embedded)\n", reactVersion, reactRefreshVersion)
 	fmt.Println()
 	fmt.Println("Server ready. Press Ctrl+C to stop.")
 	fmt.Println()

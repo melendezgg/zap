@@ -122,7 +122,9 @@ QUICK START:
 FEATURES:
   - Single binary
   - React 19.2 embedded
-  - Automatic hot reload
+  - React Fast Refresh with state preservation
+  - Compile error overlay with last-good UI
+  - Network URLs and QR code for mobile preview
   - Native TypeScript/JSX
   - Static HTML/JS support
   - Per-page title (export const title)

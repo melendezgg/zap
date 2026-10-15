@@ -40,8 +40,25 @@ func TestGenerateHTMLUsesEmbeddedReactRuntime(t *testing.T) {
 	if strings.Contains(html, "ReactDOM.createRoot") {
 		t.Fatalf("expected render to use imported createRoot binding: %s", html)
 	}
-	if !strings.Contains(html, "const root = createRoot(") {
-		t.Fatalf("expected render to use createRoot directly: %s", html)
+	if !strings.Contains(html, "window.__zapRoot = createRoot(") {
+		t.Fatalf("expected render to create a persistent root: %s", html)
+	}
+	if !strings.Contains(html, "ZapRefreshRuntime.performReactRefresh()") {
+		t.Fatalf("expected React Fast Refresh runtime: %s", html)
+	}
+}
+
+func TestHandlerServesReactRefreshRuntime(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/__zap/assets/react/react-refresh-runtime.development.mjs", nil)
+	rec := httptest.NewRecorder()
+
+	handler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "performReactRefresh") {
+		t.Fatal("expected embedded React Refresh runtime")
 	}
 }
 

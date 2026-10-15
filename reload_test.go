@@ -18,6 +18,15 @@ func TestInjectDevReloadScriptBeforeBody(t *testing.T) {
 	if !strings.Contains(result, `new EventSource("/__zap/events")`) {
 		t.Fatalf("expected reload script in result: %s", result)
 	}
+	if !strings.Contains(result, `fetch("/__zap/update?route="`) {
+		t.Fatalf("expected hot update client in result: %s", result)
+	}
+	if !strings.Contains(result, `__zap-error-overlay`) {
+		t.Fatalf("expected compilation error overlay in result: %s", result)
+	}
+	if !strings.Contains(result, `window.location.origin + "/__zap/assets/react/"`) {
+		t.Fatalf("expected blob updates to resolve embedded React assets from the page origin: %s", result)
+	}
 	if strings.Index(result, devReloadScript) > strings.Index(result, "</body>") {
 		t.Fatalf("expected reload script before closing body: %s", result)
 	}

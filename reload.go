@@ -90,8 +90,66 @@ func handleDevEvents(w http.ResponseWriter, r *http.Request) {
 const devReloadScript = `<script>
 (() => {
   if (!("EventSource" in window)) return;
+
+  const showError = (message) => {
+    let host = document.getElementById("__zap-error-overlay");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "__zap-error-overlay";
+      host.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(9,12,20,.94);color:#f8fafc;padding:32px;overflow:auto;font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace";
+      const title = document.createElement("h1");
+      title.textContent = "Zap compilation error";
+      title.style.cssText = "margin:0 0 18px;font:700 22px/1.2 system-ui,sans-serif;color:#fb7185";
+      const detail = document.createElement("pre");
+      detail.style.cssText = "white-space:pre-wrap;word-break:break-word;margin:0;max-width:1100px";
+      host.append(title, detail);
+      document.body.appendChild(host);
+    }
+    host.querySelector("pre").textContent = message;
+  };
+
+  const hideError = () => document.getElementById("__zap-error-overlay")?.remove();
+
+  const applyUpdate = async () => {
+    const response = await fetch("/__zap/update?route=" + encodeURIComponent(window.location.pathname), {
+      cache: "no-store",
+    });
+    const update = await response.json();
+    if (!response.ok) throw new Error(update.error || "Update failed");
+
+    let styles = document.getElementById("__zap-styles");
+    if (update.css && !styles) {
+      styles = document.createElement("style");
+      styles.id = "__zap-styles";
+      document.head.appendChild(styles);
+    }
+    if (styles) styles.textContent = update.css || "";
+
+    const executableCode = update.code.replaceAll(
+      "\"/__zap/assets/react/",
+      "\"" + window.location.origin + "/__zap/assets/react/",
+    );
+    const url = URL.createObjectURL(new Blob([executableCode], { type: "text/javascript" }));
+    try {
+      await import(url);
+      hideError();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
   const source = new EventSource("/__zap/events");
-  source.addEventListener("reload", () => window.location.reload());
+  source.addEventListener("reload", async () => {
+    if (!window.__zapHotUpdate) {
+      window.location.reload();
+      return;
+    }
+    try {
+      await applyUpdate();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : String(error));
+    }
+  });
 })();
 </script>`
 

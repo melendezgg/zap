@@ -45,7 +45,9 @@ go install github.com/melendezgg/zap@latest
 - **Cero configuración** - Un solo binario, sin toolchain de Node.js
 - **React 19.2** - Embebido en el binario para desarrollo offline
 - **Imports de React** - Soporta `"react"`, `"react-dom"` y `"react-dom/client"`
-- **Hot reload** - Detecta cambios automáticamente
+- **Fast Refresh** - Actualiza rutas React sin perder el estado de los componentes
+- **Overlay de errores** - Mantiene visible la última app funcional mientras corriges errores
+- **Vista móvil** - `--host 0.0.0.0` muestra URLs de red y un código QR escaneable
 - **TypeScript/JSX** - Soporte nativo vía esbuild
 - **Source maps** - Source maps inline para stacks del navegador durante desarrollo
 - **Rutas multi-formato** - `.tsx`, `.jsx`, `.html`, `.js`
@@ -73,6 +75,7 @@ mi-app/
 ```bash
 zap                        # Iniciar servidor de desarrollo
 zap --port 3000            # Puerto personalizado
+zap --host 0.0.0.0         # Probar en otro dispositivo con el QR mostrado
 zap --help                 # Mostrar ayuda
 ```
 
@@ -179,9 +182,11 @@ body {
 
 Zap usa [esbuild](https://esbuild.github.io/) para bundlear JSX/TSX en desarrollo. Las rutas se descubren desde `routes/`, los archivos privados con prefijo `_` quedan fuera del router público pero se pueden reutilizar localmente, los imports de React se mapean a globals del runtime embebido, y `public/styles/global.css` se inyecta automáticamente cuando existe.
 
-Zap usa notificaciones nativas del sistema de archivos con un debounce corto (excepto `.git` y `node_modules`), limpia su cache de salida en memoria y vuelve a escanear las rutas. Las rutas JSX/TSX mantienen un contexto incremental de esbuild para reutilizar el grafo de dependencias en compilaciones posteriores. El polling se conserva como fallback cuando las notificaciones nativas no están disponibles.
+Zap usa notificaciones nativas del sistema de archivos con un debounce corto (excepto `.git` y `node_modules`), limpia su cache de salida en memoria y vuelve a escanear las rutas. Las rutas JSX/TSX mantienen un contexto incremental de esbuild para reutilizar el grafo de dependencias en compilaciones posteriores. React Fast Refresh aplica las compilaciones exitosas en el sitio para conservar el estado local de los componentes. El polling se conserva como fallback cuando las notificaciones nativas no están disponibles.
 
-Los fallos de compilación se registran con contexto estructurado en la terminal. Las páginas de error del navegador usan rutas relativas al proyecto y ocultan errores internos inesperados, mientras la terminal conserva el diagnóstico completo para depuración local.
+Los fallos de compilación se registran con contexto estructurado en la terminal. Durante una actualización, un overlay muestra diagnósticos seguros con rutas relativas al proyecto mientras la última app exitosa sigue visible debajo. Al corregir el código, el overlay desaparece automáticamente. Los detalles internos inesperados permanecen solo en la terminal.
+
+Para probar desde un móvil, inicia Zap con `--host 0.0.0.0`. Zap muestra las URLs IPv4 alcanzables y un código QR para la primera. Los dispositivos deben estar en la misma red y conviene exponer el servidor de desarrollo únicamente en redes de confianza.
 
 ## Ejemplos
 

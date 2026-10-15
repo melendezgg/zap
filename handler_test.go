@@ -205,3 +205,45 @@ func TestDevEventsRejectsHead(t *testing.T) {
 		t.Fatalf("expected Allow GET, got %q", rec.Header().Get("Allow"))
 	}
 }
+
+func TestDevUpdateReturnsReactBundleAndCSS(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx":         `export default function App() { return <main>Updated</main>; }`,
+		"public/styles/global.css": `body { color: rebeccapurple; }`,
+	})
+	bundleCache.Clear()
+	routeStore.SetAll(scanAllRoutes())
+
+	req := httptest.NewRequest(http.MethodGet, "/__zap/update?route=/", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"code":`) || !strings.Contains(rec.Body.String(), "Updated") {
+		t.Fatalf("expected updated bundle: %s", rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "rebeccapurple") {
+		t.Fatalf("expected updated CSS: %s", rec.Body.String())
+	}
+}
+
+func TestDevUpdateReturnsSafeCompileError(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"routes/index.tsx": `export default function App() { return <main>; }`,
+	})
+	bundleCache.Clear()
+	routeStore.SetAll(scanAllRoutes())
+
+	req := httptest.NewRequest(http.MethodGet, "/__zap/update?route=/", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"error":`) || !strings.Contains(rec.Body.String(), "index.tsx") {
+		t.Fatalf("expected safe compilation diagnostic: %s", rec.Body.String())
+	}
+}
