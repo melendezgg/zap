@@ -10,7 +10,6 @@ func TestIsSensitivePublicFile(t *testing.T) {
 		"public/.env",
 		"public/.env.local",
 		"public/.env.preview",
-		"public/config.json",
 		"public/secrets.yaml",
 		"public/private.pem",
 		"public/database.sqlite",
@@ -30,6 +29,8 @@ func TestIsSensitivePublicFileAllowsNormalAssets(t *testing.T) {
 		"public/configurator.js",
 		"public/settings.css",
 		"public/app.json",
+		"public/config.json",
+		"public/config.yaml",
 		"public/images/logo.svg",
 	}
 
@@ -43,7 +44,8 @@ func TestIsSensitivePublicFileAllowsNormalAssets(t *testing.T) {
 func TestFindSensitivePublicFiles(t *testing.T) {
 	withTempProject(t, map[string]string{
 		"public/.env":              "TOKEN=secret",
-		"public/config.json":       `{"token":"secret"}`,
+		"public/config.json":       `{"apiURL":"https://example.test"}`,
+		"public/secrets.json":      `{"token":"secret"}`,
 		"public/assets/app.js":     "console.log('ok');",
 		"public/assets/id_ed25519": "secret",
 	})
@@ -51,7 +53,7 @@ func TestFindSensitivePublicFiles(t *testing.T) {
 	matches := findSensitivePublicFiles()
 	expected := map[string]bool{
 		filepath.ToSlash(filepath.Join(publicDir, ".env")):              true,
-		filepath.ToSlash(filepath.Join(publicDir, "config.json")):       true,
+		filepath.ToSlash(filepath.Join(publicDir, "secrets.json")):      true,
 		filepath.ToSlash(filepath.Join(publicDir, "assets/id_ed25519")): true,
 	}
 

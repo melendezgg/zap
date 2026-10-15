@@ -155,11 +155,10 @@ func routeInfoForFile(path string) *RouteInfo {
 	}
 
 	return &RouteInfo{
-		File:    path,
-		Type:    fileType,
-		IsTS:    strings.HasSuffix(path, ".tsx"),
-		CSSFile: "",
-		Title:   title,
+		File:  path,
+		Type:  fileType,
+		IsTS:  strings.HasSuffix(path, ".tsx"),
+		Title: title,
 	}
 }
 

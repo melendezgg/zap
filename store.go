@@ -3,11 +3,10 @@ package main
 import "sync"
 
 type RouteInfo struct {
-	File    string
-	Type    string
-	IsTS    bool
-	CSSFile string
-	Title   string
+	File  string
+	Type  string
+	IsTS  bool
+	Title string
 }
 
 type RouteStore struct {

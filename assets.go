@@ -27,9 +27,6 @@ var sensitivePublicExtensions = map[string]bool{
 }
 
 var sensitivePublicExactFiles = map[string]bool{
-	"config.json":  true,
-	"config.yaml":  true,
-	"config.yml":   true,
 	"secrets.json": true,
 	"secrets.yaml": true,
 	"secrets.yml":  true,
@@ -39,17 +36,6 @@ var sensitivePublicExactFiles = map[string]bool{
 func loadGlobalCSS() string {
 	globalCSSPath := filepath.Join(publicDir, "styles", "global.css")
 	content, err := os.ReadFile(globalCSSPath)
-	if err != nil {
-		return ""
-	}
-	return string(content)
-}
-
-func loadCSS(f string) string {
-	if f == "" {
-		return ""
-	}
-	content, err := os.ReadFile(f)
 	if err != nil {
 		return ""
 	}

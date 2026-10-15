@@ -130,11 +130,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		css := loadGlobalCSS()
-		if info.CSSFile != "" {
-			if scopedCSS := loadCSS(info.CSSFile); scopedCSS != "" {
-				css += "\n" + scopedCSS
-			}
-		}
 
 		html := generateHTML(bundledCode, css, info.Title)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -180,11 +175,6 @@ func handleDevUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	css := loadGlobalCSS()
-	if info.CSSFile != "" {
-		if scopedCSS := loadCSS(info.CSSFile); scopedCSS != "" {
-			css += "\n" + scopedCSS
-		}
-	}
 	writeJSONResponse(w, r, http.StatusOK, devUpdateResponse{Code: bundledCode, CSS: css})
 }
 

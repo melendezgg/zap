@@ -77,13 +77,13 @@ func TestHandlerServesPublicFiles(t *testing.T) {
 
 func TestHandlerBlocksSensitivePublicFiles(t *testing.T) {
 	withTempProject(t, map[string]string{
-		"public/.env":        "TOKEN=secret",
-		"public/config.json": `{"token":"secret"}`,
-		"public/private.key": "secret",
+		"public/.env":         "TOKEN=secret",
+		"public/secrets.json": `{"token":"secret"}`,
+		"public/private.key":  "secret",
 	})
 	routeStore.SetAll(map[string]*RouteInfo{})
 
-	for _, path := range []string{"/.env", "/config.json", "/private.key"} {
+	for _, path := range []string{"/.env", "/secrets.json", "/private.key"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()
 
@@ -92,6 +92,24 @@ func TestHandlerBlocksSensitivePublicFiles(t *testing.T) {
 		if rec.Code != http.StatusForbidden {
 			t.Fatalf("expected 403 for %s, got %d", path, rec.Code)
 		}
+	}
+}
+
+func TestHandlerAllowsPublicRuntimeConfig(t *testing.T) {
+	withTempProject(t, map[string]string{
+		"public/config.json": `{"apiURL":"https://example.test"}`,
+	})
+	routeStore.SetAll(map[string]*RouteInfo{})
+
+	req := httptest.NewRequest(http.MethodGet, "/config.json", nil)
+	rec := httptest.NewRecorder()
+	handler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected public runtime config to be served, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "apiURL") {
+		t.Fatalf("unexpected config response: %s", rec.Body.String())
 	}
 }
 
